@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <title>Gestão</title>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>Gestão 1</h1>
+        <div class="buttons">
+            <button id="addUnitSectorButton">Cadastrar Unidade/Setor</button>
+            <button id="addPersonButton">Adicionar Pessoa</button>
+        </div>
+    </div>
+    <div class="search-container">
+        <input type="text" id="nameSearch" placeholder="Buscar por nome...">
+        <select id="sectorSearch">
+            <option value="">Filtrar por setor</option>
+        </select>
+        <select id="unitSearch">
+            <option value="">Filtrar por Unidade Intermarítima</option>
+        </select>
+    </div>
+    <div class="admin">
+        <h2>Lista de Pessoas</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Unidade Intermarítima</th>
+                    <th>Setor</th>
+                    <th>Ramal</th>
+                    <th>E-mail</th>
+                    <th>Celular Corporativo</th>
+                    <th class="actions">Ações</th>
+                </tr>
+            </thead>
+            <tbody id="adminExtensionList">
+            </tbody>
+        </table>
+    </div>
+</div>
+<div id="manageUnitSectorModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Gerenciar Unidades e Setores</h2>
+            <span class="close" id="closeManageUnitSectorModal">&times;</span>
+        </div>
+        <div class="form-container">
+            <div>
+                <h3>Cadastrar Unidade</h3>
+                <input type="text" id="unitName" placeholder="Nome da Unidade">
+                <input type="text" id="unitCnpj" placeholder="CNPJ da Unidade">
+                <button id="saveUnitButton">Salvar</button>
+            </div>
+            <div>
+                <h3>Unidades Cadastradas</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Unidade</th>
+                            <th>CNPJ</th>
+                            <th class="actions">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="unitList">
+                    </tbody>
+                </table>
+            </div>
+            <div>
+                <h3>Cadastrar Setor</h3>
+                <input type="text" id="sectorName" placeholder="Nome do Setor">
+                <select id="selectUnitForSector">
+                    <option value="">Selecione a Unidade</option>
+                </select>
+                <button id="saveSectorButton">Salvar</button>
+            </div>
+            <div>
+                <h3>Unidades/Setores Cadastrados</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Setor</th>
+                            <th>Unidade</th>
+                            <th class="actions">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sectorTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="addPersonModal" class="modal">
+    <div class="modal-content">
+        <span id="closeAddPersonModal" class="close">&times;</span>
+        <h2 id="addPersonModalTitle">Adicionar Pessoa</h2>
+        <input type="hidden" id="editIndex">
+        <label for="personName">Nome:</label>
+        <input type="text" id="personName" placeholder="Nome">
+        <label for="personUnit">Unidade:</label>
+        <select id="personUnit">
+            <option value="">Selecione a Unidade</option>
+        </select>
+        <label for="personSector">Setor:</label>
+        <select id="personSector">
+            <option value="">Selecione o Setor</option>
+        </select>
+        <label for="personExtension">Ramal:</label>
+        <input type="text" id="personExtension" placeholder="Ramal">
+        <label for="personEmail">E-mail:</label>
+        <input type="email" id="personEmail" placeholder="E-mail">
+        <label for="personCorporatePhone">Telefone Corporativo:</label>
+        <input type="text" id="personCorporatePhone" placeholder="Telefone Corporativo">
+        <button id="savePersonButton">Salvar</button>
+    </div>
+</div>
+<script src="script.js"></script>
+</body>
+</html>
+
+
+
+
+
+
+
