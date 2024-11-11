@@ -3,154 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <title>Gestão de Ramais</title>
+    <title>Lista de Ramais</title>
+    <link rel="stylesheet" href="styles2.css">
 </head>
 <body>
-<div class="container">
-    <div class="header">
-        <h1>GERENCIAR RAMAIS</h1>
-        <div class="buttons">
-            <button id="addUnitSectorButton">Cadastrar Unidade/Setor</button>
-            <button id="addPersonButton">Adicionar Pessoa</button>
-        </div>
-    </div>
-    <div class="search-container">
-        <input type="text" id="nameSearch" placeholder="Buscar por nome...">
-        <select id="sectorSearch">
-            <option value="">Filtrar por setor</option>
-        </select>
-        <select id="filtro-unidade">
-            <option value="">Filtrar por Unidade Intermarítima</option>
-        </select>
-        <button id="searchButton">Buscar</button> <!-- Botão de busca -->
-    </div>
-    <div class="lista-pessoas">
-        <h2>Lista de Pessoas</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Nome</th>
-                    <th>Unidade Intermarítima</th>
-                    <th>Setor</th>
-                    <th>Ramal</th>
-                    <th>E-mail</th>
-                    <th>Celular Corporativo</th>
-                    <th class="actions">Ações</th>
-                </tr>
-            </thead>
-            <tbody id="adminExtensionList">
-            </tbody>
-        </table>
-    </div>
-</div>
-<div id="manageUnitSectorModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2>Gerenciar Unidades e Setores</h2>
-            <span class="close" id="closeManageUnitSectorModal">&times;</span>
-        </div>
-        <div class="form-container">
-            <div>
-                <h3>Cadastrar/Editar Unidade</h3>
-                <input type="hidden" id="editUnitIndex">
-                <input type="text" id="unitName" placeholder="Nome da Unidade" required>
-                <input type="text" id="unitCnpj" placeholder="CNPJ da Unidade" maxlength="18" required>
-                <button id="saveUnitButton">Cadastrar</button>
-            </div>
-            <div>
-                <h3>Unidades Cadastradas</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Unidade</th>
-                            <th>CNPJ</th>
-                            <th class="actions">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="unitList">
-                        <!-- As unidades cadastradas serão inseridas aqui dinamicamente -->
-                    </tbody>
-                </table>
-            </div>
-        <div>
-             <h3>Cadastrar/Editar Setor</h3>
-                <input type="hidden" id="editSectorIndex">
-                <input type="text" id="sectorName" placeholder="Nome do Setor">
-                <select id="selectUnitForSector">
-                    <option value="">Selecione a Unidade</option>
-                </select>
-                <button id="saveSectorButton">Cadastrar</button>
-            </div>
-            <div>
-                <h3>Setores Cadastrados</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Setor</th>
-                            <th>Unidade</th>
-                            <th class="actions">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="sectorTableBody">
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
-<div id="addPersonModal" class="modal">
-    <div class="modal-content">
-        <span id="closeAddPersonModal" class="close">&times;</span>
-        <h2 id="addPersonModalTitle">Adicionar Pessoa</h2>
-        <input type="hidden" id="editIndex">
-        <div class="form-group">
-            <label for="personName">Nome:</label>
-            <input type="text" id="personName" placeholder="Nome">
-        </div>
-        <div class="form-group">
-            <label for="personUnit">Unidade:</label>
-            <select id="personUnit">
-                <option value="">Selecione a Unidade</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label for="personSector">Setor:</label>
-            <select id="personSector">
-                <option value="">Selecione o Setor</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label for="personExtension">Ramal:</label>
-            <input type="text" id="personExtension" placeholder="Ramal">
-        </div>
-        <div class="form-group">
-            <label for="personEmail">E-mail:</label>
-            <input type="email" id="personEmail" placeholder="E-mail">
-        </div>
-        <div class="form-group">
-            <label for="personCorporatePhone">Telefone Corporativo:</label>
-            <input type="text" id="personCorporatePhone" placeholder="Telefone Corporativo">
-        </div>
-        <button id="savePersonButton">Salvar</button>
-    </div>
-</div>
-<div id="loginModal" class="modal">
-    <div class="modal-content">
-        <span id="closeLoginModal" class="close">&times;</span>
-        <h2>Login</h2>
-        <div class="form-group">
-            <label for="loginUsername">Usuário:</label>
-            <input type="text" id="loginUsernameModal" placeholder="Usuário">
-        </div>
-        <div class="form-group">
-            <label for="loginPassword">Senha:</label>
-            <input type="password" id="loginPasswordModal" placeholder="Senha">
-        </div>
-        <button id="loginButton">Entrar</button>
-    </div>
-</div>
+    <div class="container">
+        <h1>Lista de Ramais</h1>
 
+        <!-- Filtros -->
+        <div class="filters">
+            <input type="text" id="filterName" placeholder="Buscar por nome">
+            <select id="filterUnit">
+                <option value="">Unidade</option>
+                <!-- As opções serão populadas dinamicamente -->
+            </select>
+            <select id="filterSector">
+                <option value="">Setor</option>
+                <!-- As opções serão populadas dinamicamente -->
+            </select>
+            <button onclick="applyFilters()">Aplicar Filtros</button>
+        </div>
+
+        <!-- Lista de Ramais por Setor -->
+        <div id="ramaisContainer">
+            <!-- Os ramais serão populados dinamicamente por setor -->
+        </div>
+    </div>
+    
+    <script type="module" src="script2.js"></script>
 </body>
 </html>
