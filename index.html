@@ -7,29 +7,31 @@
     <link rel="stylesheet" href="styles2.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Lista de Ramais</h1>
-
-        <!-- Filtros -->
-        <div class="filters">
-            <input type="text" id="filterName" placeholder="Buscar por nome">
-            <select id="filterUnit">
-                <option value="">Unidade</option>
-                <!-- As opções serão populadas dinamicamente -->
-            </select>
-            <select id="filterSector">
-                <option value="">Setor</option>
-                <!-- As opções serão populadas dinamicamente -->
-            </select>
-            <button onclick="applyFilters()">Aplicar Filtros</button>
+    <nav class="navbar">
+        <div class="navbar-content">
+            <div class="logo">
+                <img src="logo-intermartimaOFICIAL2024.png" alt="Logo"/>
+            </div>
+            <div class="search-filters">
+                <input type="text" id="filterName" placeholder="Buscar por nome"/>
+                <select id="filterSector">
+                    <option value="">Setor</option>
+                    <!-- As opções serão populadas dinamicamente -->
+                </select>
+                <select id="filterUnit">
+                    <option value="">Unidade</option>
+                    <!-- As opções serão populadas dinamicamente -->
+                </select>
+                <button onclick="applyFilters()">Aplicar Filtros</button>
+                </div>
         </div>
-
-        <!-- Lista de Ramais por Setor -->
+    </nav>
+    <h1>RAMAIS</h1>
+    <div class="container">
+       <!-- Lista de Ramais por Setor -->
         <div id="ramaisContainer">
             <!-- Os ramais serão populados dinamicamente por setor -->
-        </div>
-    </div>
-    
+<table id="peopleTable">   
     <script type="module" src="script2.js"></script>
 </body>
 </html>
