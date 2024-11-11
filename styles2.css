@@ -8,7 +8,7 @@ body {
 h1 {
     text-align: center;
     margin-top: 10px;
-    color: #006c5b;
+    color:#006c5b
 }
 
 .container {
@@ -66,28 +66,16 @@ button:hover {
     border-bottom: 1px solid #ddd;
 }
 
-.ramal-item div {
-    flex: 1;
-    padding: 0 10px; /* Adiciona um pouco de espaçamento horizontal */
-}
-
-/* Novos estilos para unidade e ramal */
-.unit-ramal-container {
+/* Novo estilo para alinhar nome, unidade e ramal na mesma linha */
+.ramal-info {
     display: flex;
-    align-items: center; /* Alinha verticalmente ao centro */
+    justify-content: space-between; /* Espaça os itens */
+    width: 100%; /* Garante que ocupe toda a largura disponível */
 }
 
-.unit-ramal-container div {
-    position: relative;
-}
-
-.unit-ramal-container div:not(:last-child)::after {
-    content: "|"; /* Linha vertical */
-    position: absolute;
-    right: -10px; /* Espaço entre o texto e a linha */
-    top: 50%;
-    transform: translateY(-50%); /* Centraliza verticalmente */
-    color: #ddd; /* Cor da linha */
+.ramal-info div {
+    flex: 1; /* Cada div ocupa a mesma quantidade de espaço */
+    text-align: center; /* Centraliza o texto */
 }
 
 /* Responsivo */
@@ -103,6 +91,14 @@ button:hover {
 
     .ramal-item div {
         width: 100%; /* Faz os itens ocuparem a largura total */
+    }
+
+    .ramal-info {
+        flex-direction: row; /* Garante que os itens fiquem na mesma linha */
+    }
+
+    .ramal-info div {
+        text-align: left; /* Alinha o texto à esquerda */
     }
 }
 
