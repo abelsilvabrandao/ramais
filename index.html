@@ -4,12 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles.css">
-    <title>Gestão</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <title>Gestão de Ramais</title>
 </head>
 <body>
 <div class="container">
     <div class="header">
-        <h1>Gestão 1</h1>
+        <h1>GERENCIAR RAMAIS</h1>
         <div class="buttons">
             <button id="addUnitSectorButton">Cadastrar Unidade/Setor</button>
             <button id="addPersonButton">Adicionar Pessoa</button>
@@ -20,11 +21,12 @@
         <select id="sectorSearch">
             <option value="">Filtrar por setor</option>
         </select>
-        <select id="unitSearch">
+        <select id="filtro-unidade">
             <option value="">Filtrar por Unidade Intermarítima</option>
         </select>
+        <button id="searchButton">Buscar</button> <!-- Botão de busca -->
     </div>
-    <div class="admin">
+    <div class="lista-pessoas">
         <h2>Lista de Pessoas</h2>
         <table>
             <thead>
@@ -51,10 +53,11 @@
         </div>
         <div class="form-container">
             <div>
-                <h3>Cadastrar Unidade</h3>
-                <input type="text" id="unitName" placeholder="Nome da Unidade">
-                <input type="text" id="unitCnpj" placeholder="CNPJ da Unidade">
-                <button id="saveUnitButton">Salvar</button>
+                <h3>Cadastrar/Editar Unidade</h3>
+                <input type="hidden" id="editUnitIndex">
+                <input type="text" id="unitName" placeholder="Nome da Unidade" required>
+                <input type="text" id="unitCnpj" placeholder="CNPJ da Unidade" maxlength="18" required>
+                <button id="saveUnitButton">Cadastrar</button>
             </div>
             <div>
                 <h3>Unidades Cadastradas</h3>
@@ -67,19 +70,21 @@
                         </tr>
                     </thead>
                     <tbody id="unitList">
+                        <!-- As unidades cadastradas serão inseridas aqui dinamicamente -->
                     </tbody>
                 </table>
             </div>
-            <div>
-                <h3>Cadastrar Setor</h3>
+        <div>
+             <h3>Cadastrar/Editar Setor</h3>
+                <input type="hidden" id="editSectorIndex">
                 <input type="text" id="sectorName" placeholder="Nome do Setor">
                 <select id="selectUnitForSector">
                     <option value="">Selecione a Unidade</option>
                 </select>
-                <button id="saveSectorButton">Salvar</button>
+                <button id="saveSectorButton">Cadastrar</button>
             </div>
             <div>
-                <h3>Unidades/Setores Cadastrados</h3>
+                <h3>Setores Cadastrados</h3>
                 <table>
                     <thead>
                         <tr>
@@ -100,32 +105,52 @@
         <span id="closeAddPersonModal" class="close">&times;</span>
         <h2 id="addPersonModalTitle">Adicionar Pessoa</h2>
         <input type="hidden" id="editIndex">
-        <label for="personName">Nome:</label>
-        <input type="text" id="personName" placeholder="Nome">
-        <label for="personUnit">Unidade:</label>
-        <select id="personUnit">
-            <option value="">Selecione a Unidade</option>
-        </select>
-        <label for="personSector">Setor:</label>
-        <select id="personSector">
-            <option value="">Selecione o Setor</option>
-        </select>
-        <label for="personExtension">Ramal:</label>
-        <input type="text" id="personExtension" placeholder="Ramal">
-        <label for="personEmail">E-mail:</label>
-        <input type="email" id="personEmail" placeholder="E-mail">
-        <label for="personCorporatePhone">Telefone Corporativo:</label>
-        <input type="text" id="personCorporatePhone" placeholder="Telefone Corporativo">
+        <div class="form-group">
+            <label for="personName">Nome:</label>
+            <input type="text" id="personName" placeholder="Nome">
+        </div>
+        <div class="form-group">
+            <label for="personUnit">Unidade:</label>
+            <select id="personUnit">
+                <option value="">Selecione a Unidade</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="personSector">Setor:</label>
+            <select id="personSector">
+                <option value="">Selecione o Setor</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="personExtension">Ramal:</label>
+            <input type="text" id="personExtension" placeholder="Ramal">
+        </div>
+        <div class="form-group">
+            <label for="personEmail">E-mail:</label>
+            <input type="email" id="personEmail" placeholder="E-mail">
+        </div>
+        <div class="form-group">
+            <label for="personCorporatePhone">Telefone Corporativo:</label>
+            <input type="text" id="personCorporatePhone" placeholder="Telefone Corporativo">
+        </div>
         <button id="savePersonButton">Salvar</button>
     </div>
 </div>
-<script src="script.js"></script>
+<div id="loginModal" class="modal">
+    <div class="modal-content">
+        <span id="closeLoginModal" class="close">&times;</span>
+        <h2>Login</h2>
+        <div class="form-group">
+            <label for="loginUsername">Usuário:</label>
+            <input type="text" id="loginUsernameModal" placeholder="Usuário">
+        </div>
+        <div class="form-group">
+            <label for="loginPassword">Senha:</label>
+            <input type="password" id="loginPasswordModal" placeholder="Senha">
+        </div>
+        <button id="loginButton">Entrar</button>
+    </div>
+</div>
+<script type="module" src="script.js"></script>
 </body>
 </html>
-
-
-
-
-
-
-

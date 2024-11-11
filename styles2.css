@@ -1,0 +1,101 @@
+/* Estilos gerais */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+h1 {
+    text-align: center;
+    margin-top: 10px;
+}
+
+.container {
+    max-width: 800px;
+    margin: auto;
+    padding: 20px;
+}
+
+/* Filtros */
+.filters {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.filters input,
+.filters select {
+    padding: 10px;
+    margin: 5px;
+    font-size: 16px;
+    flex: 1 1 30%;
+    min-width: 120px;
+}
+
+button {
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #006c5b;
+    color: white;
+}
+
+button:hover {
+    background-color: #4CAF50;
+}
+
+/* Ramais por setor */
+.ramais-container {
+    border-top: 2px solid #006c5b;
+    margin-top: 20px;
+    padding-top: 10px;
+}
+
+.ramais-container h2 {
+    color: #006c5b;
+    margin: 0 0 10px;
+}
+
+.ramal-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #ddd;
+}
+
+.ramal-item div {
+    flex: 1;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+    .filters {
+        flex-direction: column;
+    }
+
+    .ramal-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+/* Estilos para os cabeçalhos da tabela */
+th {
+    background-color: #006c5b; /* Cor verde */
+    color: white;
+    padding: 8px;
+    text-align: left;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+#peopleTable th {
+    background-color: #006c5b; /* Cor verde */
+    color: white;
+    padding: 8px;
+    text-align: left;
+    font-weight: bold;
+    font-size: 16px;
+}
