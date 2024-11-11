@@ -90,8 +90,6 @@ function renderPeopleList() {
                 <div>${person.name}</div>
                 <div>${person.unit}</div>
                 <div>${person.extension}</div>
-                <div>${person.email || 'N/A'}</div>
-                <div>${person.corporatePhone || 'N/A'}</div>
             `;
 
             sectorDiv.appendChild(personDiv);
@@ -145,8 +143,6 @@ function renderFilteredPeopleList(filteredPeople) {
                 <div>${person.name}</div>
                 <div>${person.unit}</div>
                 <div>${person.extension}</div>
-                <div>${person.email || 'N/A'}</div>
-                <div>${person.corporatePhone || 'N/A'}</div>
             `;
 
             sectorDiv.appendChild(personDiv);

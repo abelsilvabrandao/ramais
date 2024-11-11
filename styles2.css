@@ -67,6 +67,26 @@ button:hover {
 
 .ramal-item div {
     flex: 1;
+    padding: 0 10px; /* Adiciona um pouco de espaçamento horizontal */
+}
+
+/* Novos estilos para unidade e ramal */
+.unit-ramal-container {
+    display: flex;
+    align-items: center; /* Alinha verticalmente ao centro */
+}
+
+.unit-ramal-container div {
+    position: relative;
+}
+
+.unit-ramal-container div:not(:last-child)::after {
+    content: "|"; /* Linha vertical */
+    position: absolute;
+    right: -10px; /* Espaço entre o texto e a linha */
+    top: 50%;
+    transform: translateY(-50%); /* Centraliza verticalmente */
+    color: #ddd; /* Cor da linha */
 }
 
 /* Responsivo */
@@ -78,6 +98,10 @@ button:hover {
     .ramal-item {
         flex-direction: column;
         align-items: flex-start;
+    }
+
+    .ramal-item div {
+        width: 100%; /* Faz os itens ocuparem a largura total */
     }
 }
 
@@ -98,4 +122,24 @@ th {
     text-align: left;
     font-weight: bold;
     font-size: 16px;
+}
+
+/* Estilos adicionais para melhorar a visualização em dispositivos móveis */
+@media (max-width: 480px) {
+    h1 {
+        font-size: 24px; /* Tamanho da fonte do título */
+    }
+
+    .filters input,
+    .filters select {
+        font-size: 14px; /* Tamanho da fonte dos filtros */
+    }
+
+    .ramal-item {
+        padding: 6px 0; /* Menos espaço entre os itens */
+    }
+
+    .ramal-item div {
+        font-size: 14px; /* Tamanho da fonte dos itens */
+    }
 }
