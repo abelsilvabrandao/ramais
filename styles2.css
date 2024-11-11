@@ -112,15 +112,6 @@ th {
     font-size: 16px;
 }
 
-#peopleTable th {
-    background-color: #006c5b; /* Cor verde */
-    color: white;
-    padding: 8px;
-    text-align: left;
-    font-weight: bold;
-    font-size: 16px;
-}
-
 /* Estilos adicionais para melhorar a visualização em dispositivos móveis */
 @media (max-width: 480px) {
     h1 {
@@ -138,5 +129,103 @@ th {
 
     .ramal-item div {
         font-size: 14px; /* Tamanho da fonte dos itens */
+    }
+}
+
+.peopleTable {
+    width: 100%; /* A tabela ocupará 100% da largura do contêiner */
+    table-layout: fixed; /* Define um layout fixo para a tabela */
+    border-collapse: collapse; /* Remove o espaço entre as bordas */
+}
+
+.peopleTable th, .peopleTable td {
+    padding: 8px; /* Espaçamento interno */
+    text-align: left; /* Alinhamento do texto */
+    overflow: hidden; /* Esconde o conteúdo que não se encaixa */
+    white-space: nowrap; /* Impede a quebra de linha */
+    text-overflow: ellipsis; /* Adiciona reticências (...) para texto longo */
+}
+
+.peopleTable th {
+    width: 33%; /* Define a largura de cada coluna como 33% */
+}
+
+.peopleTable td {
+    border-bottom: 1px solid #ddd; /* Linha horizontal entre as células */
+}
+
+.peopleTable tr:last-child td {
+    border-bottom: none; /* Remove a linha da última linha da tabela */
+}
+
+.centered {
+    text-align: center; /* Centraliza o texto */
+}
+/* Estilos para a Navbar */
+.navbar {
+    background-color: #006c5b; /* Cor de fundo da navbar */
+    padding: 10px 20px; /* Espaçamento interno */
+    flex-wrap: wrap; /* Permite que os itens se movam para a linha seguinte em telas pequenas */
+}
+
+.navbar-content {
+    display: flex; /* Usar flexbox para alinhar logo e filtros */
+    justify-content: space-between; /* Espaço entre logo e filtros */
+    align-items: center; /* Centraliza verticalmente */
+    width: 100%; /* Garante que ocupa toda a largura disponível */
+}
+
+.logo img {
+    height: 50px; /* Altura da logo */
+}
+
+.search-filters {
+    display: flex; /* Usar flexbox para alinhar filtros */
+    align-items: center; /* Centraliza verticalmente */
+    flex-wrap: wrap; /* Permite que os filtros se movam para a linha seguinte em telas pequenas */
+    margin-top: 10px; /* Espaço superior para separar dos elementos acima */
+}
+
+.search-filters input,
+.search-filters select,
+.search-filters button {
+    margin-left: 10px; /* Espaço entre os elementos */
+    padding: 10px; /* Espaçamento interno */
+    font-size: 16px; /* Tamanho da fonte */
+    min-width: 120px; /* Largura mínima para os filtros */
+}
+
+/* Estilo do botão */
+.search-filters button {
+    background-color: #4CAF50; /* Cor do botão */
+    color: white; /* Cor do texto do botão */
+    border: none; /* Remove borda padrão */
+    border-radius: 5px; /* Bordas arredondadas */
+    cursor: pointer; /* Cursor de ponteiro ao passar o mouse */
+}
+
+.search-filters button:hover {
+    background-color: #45a049; /* Cor do botão ao passar o mouse */
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .navbar-content {
+        flex-direction: column; /* Coloca logo e filtros em coluna */
+        align-items: flex-start; /* Alinha itens à esquerda */
+    }
+
+    .search-filters {
+        width: 100%; /* Filtros ocupam toda a largura */
+        justify-content: flex-start; /* Alinha os filtros à esquerda */
+    }
+
+    .search-filters input,
+    .search-filters select,
+    .search-filters button {
+        margin-left: 0; /* Remove margem à esquerda em telas pequenas */
+        margin-top: 5px; /* Espaço superior entre os filtros */
+        width: 100%; /* Filtros ocupam 100% da largura */
+        max-width: 200px; /* Largura máxima para os filtros */
     }
 }

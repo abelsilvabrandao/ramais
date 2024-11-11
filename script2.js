@@ -60,6 +60,7 @@ function fetchUnitsAndSectors() {
 }
 
 // Função para renderizar a lista de pessoas por setor
+// Função para renderizar a lista de pessoas por setor
 function renderPeopleList() {
     const ramaisContainer = document.getElementById('ramaisContainer');
     ramaisContainer.innerHTML = ''; // Limpa a lista antes de popular
@@ -81,24 +82,40 @@ function renderPeopleList() {
         sectorTitle.textContent = sector;
         sectorDiv.appendChild(sectorTitle);
 
+        // Criação da tabela para o setor
+        const table = document.createElement('table');
+        table.className = 'peopleTable'; // Adiciona uma classe para estilização
+
+        // Cabeçalho da tabela
+        const thead = document.createElement('thead');
+        thead.innerHTML = `
+            <tr>
+                <th>Nome</th>
+                <th>Unidade</th>
+                <th>Ramal</th>
+            </tr>
+        `;
+        table.appendChild(thead);
+
+        // Corpo da tabela
+        const tbody = document.createElement('tbody');
+
         // Lista de pessoas no setor
         sectors[sector].forEach(person => {
-            const personDiv = document.createElement('div');
-            personDiv.className = 'ramal-item';
-
-            personDiv.innerHTML = `
-                <div>${person.name}</div>
-                <div>${person.unit}</div>
-                <div>${person.extension}</div>
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${person.name}</td>
+                <td>${person.unit}</td>
+                <td>${person.extension}</td>
             `;
-
-            sectorDiv.appendChild(personDiv);
+            tbody.appendChild(row);
         });
 
-        ramaisContainer.appendChild(sectorDiv);
+        table.appendChild(tbody);
+        sectorDiv.appendChild(table); // Adiciona a tabela ao setor
+        ramaisContainer.appendChild(sectorDiv); // Adiciona o setor ao contêiner principal
     });
 }
-
 // Função para aplicar filtros
 window.applyFilters = function() {
     const nameFilter = document.getElementById('filterName').value.toLowerCase();
@@ -121,34 +138,57 @@ function renderFilteredPeopleList(filteredPeople) {
     const ramaisContainer = document.getElementById('ramaisContainer');
     ramaisContainer.innerHTML = ''; // Limpa a lista antes de popular
 
+    // Agrupa pessoas filtradas por setor
     const sectors = filteredPeople.reduce((acc, person) => {
         acc[person.sector] = acc[person.sector] || [];
         acc[person.sector].push(person);
         return acc;
     }, {});
 
+    // Cria blocos de setor
     Object.keys(sectors).forEach(sector => {
         const sectorDiv = document.createElement('div');
         sectorDiv.className = 'ramais-container';
 
+        // Nome do setor
         const sectorTitle = document.createElement('h2');
         sectorTitle.textContent = sector;
         sectorDiv.appendChild(sectorTitle);
 
-        sectors[sector].forEach(person => {
-            const personDiv = document.createElement('div');
-            personDiv.className = 'ramal-item';
+        // Criação da tabela para o setor
+        const table = document.createElement('table');
+        table.className = 'peopleTable'; // Adiciona uma classe para estilização
 
-            personDiv.innerHTML = `
-                <div>${person.name}</div>
-                <div>${person.unit}</div>
-                <div>${person.extension}</div>
+        // Cabeçalho da tabela
+        const thead = document.createElement('thead');
+        thead.innerHTML = `
+            <tr>
+                <th>Nome</th>
+                <th>Unidade</th>
+                <th>Ramal</th>
+            </tr>
+        `;
+        table.appendChild(thead);
+
+        // Corpo da tabela
+        const tbody = document.createElement('tbody');
+
+        // Lista de pessoas no setor filtrado
+        sectors[sector].forEach(person => {
+            const row = document.createElement('tr');
+
+            row.innerHTML = `
+                <td>${person.name}</td>
+                <td class="centered">${person.unit}</td>
+                <td class="centered">${person.extension}</td>
             `;
 
-            sectorDiv.appendChild(personDiv);
+            tbody.appendChild(row);
         });
 
-        ramaisContainer.appendChild(sectorDiv);
+        table.appendChild(tbody);
+        sectorDiv.appendChild(table); // Adiciona a tabela ao setor
+        ramaisContainer.appendChild(sectorDiv); // Adiciona o setor ao contêiner principal
     });
 }
 
@@ -157,3 +197,10 @@ document.addEventListener('DOMContentLoaded', function() {
     fetchPeople();
 });
 
+// Adiciona um event listener ao campo de busca
+document.getElementById('filterName').addEventListener('keypress', function(event) {
+    if (event.key === 'Enter') {
+        event.preventDefault(); // Previne o comportamento padrão do Enter
+        applyFilters(); // Chama a função de aplicar filtros
+    }
+});
