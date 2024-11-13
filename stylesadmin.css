@@ -1,0 +1,264 @@
+/* Estilos gerais */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+h1 {
+    text-align: center;
+    margin-top: 10px;
+    color: #006c5b;
+}
+
+.container {
+    max-width: 800px;
+    margin: auto;
+    padding: 20px;
+}
+
+/* Filtros */
+.filters {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.filters input,
+.filters select {
+    padding: 10px;
+    margin: 5px;
+    font-size: 16px;
+    flex: 1 1 30%;
+    min-width: 120px;
+}
+
+/* Botões */
+button {
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #006c5b;
+    color: white;
+}
+
+button:hover {
+    background-color: #4CAF50;
+}
+
+/* Tabela e Ramais */
+.peopleTable {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+}
+
+.peopleTable th,
+.peopleTable td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.peopleTable th {
+    background-color: #006c5b;
+    color: white;
+    font-weight: bold;
+}
+
+.ramais-container {
+    border-top: 2px solid #006c5b;
+    margin-top: 20px;
+    padding-top: 10px;
+}
+
+.ramal-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #ddd;
+    font-weight: bold;
+}
+
+/* Estilos para os cabeçalhos da tabela */
+th {
+    color: white;
+    background-color: #006c5b;
+    padding: 8px;
+}
+
+/* Estilos para a Navbar */
+.navbar {
+    background-color: #006c5b; /* Cor de fundo da navbar */
+    padding: 10px 20px; /* Espaçamento interno */
+    flex-wrap: wrap; /* Permite que os itens se movam para a linha seguinte em telas pequenas */
+}
+
+.navbar-content {
+    display: flex; /* Usar flexbox para alinhar logo e filtros */
+    justify-content: space-between; /* Espaço entre logo e filtros */
+    align-items: center; /* Centraliza verticalmente */
+    width: 100%; /* Garante que ocupa toda a largura disponível */
+}
+
+.logo img {
+    height: 50px; /* Altura da logo */
+}
+
+.search-filters {
+    display: flex; /* Usar flexbox para alinhar filtros */
+    align-items: center; /* Centraliza verticalmente */
+    flex-wrap: wrap; /* Permite que os filtros se movam para a linha seguinte em telas pequenas */
+    margin-top: 10px; /* Espaço superior para separar dos elementos acima */
+}
+
+.search-filters input,
+.search-filters select,
+.search-filters button {
+    margin-left: 10px; /* Espaço entre os elementos */
+    padding: 10px; /* Espaçamento interno */
+    font-size: 16px; /* Tamanho da fonte */
+    min-width: 120px; /* Largura mínima para os filtros */
+}
+
+/* Estilo do botão */
+.search-filters button {
+    background-color: #4CAF50; /* Cor do botão */
+    color: white; /* Cor do texto do botão */
+    border: none; /* Remove borda padrão */
+    border-radius: 5px; /* Bordas arredondadas */
+    cursor: pointer; /* Cursor de ponteiro ao passar o mouse */
+}
+
+.search-filters button:hover {
+    background-color: #45a049; /* Cor do botão ao passar o mouse */
+}
+
+/* Estilos para os modais */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    margin: 10% auto;
+    padding: 20px;
+    max-width: 90%;
+    width: 400px;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .filters {
+        flex-direction: column;
+    }
+
+    .search-filters {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .search-filters input,
+    .search-filters select,
+    .search-filters button {
+        width: 100%;
+        max-width: none; /* Remove a largura máxima */
+        margin-top: 5px; /* Espaço superior entre os filtros */
+    }
+
+    .ramal-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .ramal-info {
+        flex-direction: column; /* Alinha os itens em coluna para telas pequenas */
+    }
+}
+
+@media (max-width: 480px) {
+    h1 {
+        font-size: 24px;
+    }
+
+    .filters input,
+    .filters select {
+        font-size: 14px;
+    }
+
+    .ramal-item {
+        padding: 6px 0;
+    }
+
+    .ramal-item div {
+        font-size: 14px;
+    }
+}
+
+/* Estilo para o botão Excluir */
+.actions button:last-child {
+    background-color: #c91414;
+}
+
+.actions button:last-child:hover {
+ background-color: #ff4c4c;
+}
+
+/* Estilos adicionais para melhorar a visualização em dispositivos móveis */
+.scrollable {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    margin-top: 10px;
+}
+
+.actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* Estilos para os botões dentro do modal */
+.modal-content .button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-right: 10px;
+}
+
+.button.exit {
+    background-color: #ccc;
+    color: white;
+}
+
+.button.primary {
+    background-color: #007bff;
+    color: white;
+}
+
+.button.primary:hover {
+    background-color: #0056b3;
+}
+
+.loading {
+    text-align: center;
+    margin: 50px; /* Espaço acima e abaixo */
+}
+
+#totalPessoas {
+    font-size: 18px;
+    color: #006c5b; /* Cor que combina com o tema */
+}

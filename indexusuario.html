@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Ramais</title>
+    <link rel="stylesheet" href="stylesusuario.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-content">
+            <div class="logo">
+                <img src="logo-intermartimaOFICIAL2024.png" alt="Logo"/>
+            </div>
+            <div class="login-icon">
+                <img src="admin.png" alt="Login" onclick="redirectToLogin()" title="Acessar Gerenciamento"/>
+            </div>
+            <div class="search-filters">
+                <input type="text" id="filterName" placeholder="Buscar por nome"/>
+                <select id="filterSector">
+                    <option value="">Selecione Setor</option>
+                    <!-- As opções serão populadas dinamicamente -->
+                </select>
+                <select id="filterUnit">
+                    <option value="">Selecione Unidade</option>
+                    <!-- As opções serão populadas dinamicamente -->
+                </select>
+                <button onclick="applyFilters()">Aplicar Filtros</button>
+            </div>
+            <!-- Ícone de login -->
+        </div>
+    </nav>
+    <h1>RAMAIS</h1>
+    <div class="container">
+       <!-- Lista de Ramais por Setor -->
+        <div id="ramaisContainer">
+            <!-- Os ramais serão populados dinamicamente por setor -->
+            <table id="peopleTable"></table>
+        </div>
+    </div>
+
+    <script type="module" src="scriptusuario.js"></script>
+    <script>
+        function redirectToLogin() {
+            // Abre o modal de login com SweetAlert
+            Swal.fire({
+                title: 'Admin Ramais',
+                html: `
+                    <input type="text" id="username" class="swal2-input" placeholder="Usuário">
+                    <input type="password" id="password" class="swal2-input" placeholder="Senha">
+                `,
+                confirmButtonText: 'Entrar',
+                focusConfirm: false,
+                preConfirm: () => {
+                    const username = Swal.getPopup().querySelector('#username').value;
+                    const password = Swal.getPopup().querySelector('#password').value;
+                    
+                    // Aqui você pode adicionar a lógica de validação de usuário
+                    if (!username || !password) {
+                        Swal.showValidationMessage(`Por favor, preencha os campos`);
+                        return false;
+                    }
+    
+                    // Exemplo de validação básica (substitua pela lógica real de autenticação)
+                    if (username === 'admin' && password === '1234') {
+                        return { username, password };
+                    } else {
+                        Swal.showValidationMessage(`Usuário ou senha incorretos`);
+                        return false;
+                    }
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Redireciona para a página de administração se o login for bem-sucedido
+                    window.location.href = "admin.html"; // Substitua pelo URL da página de administração
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+
+
