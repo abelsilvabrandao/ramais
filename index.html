@@ -12,10 +12,15 @@
     <nav class="navbar">
         <div class="navbar-content">
             <div class="logo">
-                <img src="logo-intermartimaOFICIAL2024.png" alt="Logo"/>
+                <a href="index.html" style="display: block;">
+                    <img src="logo-intermartimaOFICIAL2024.png" alt="Logo"/>
+                </a>
             </div>
-            <div class="login-icon">
-                <img src="admin.png" alt="Login" onclick="redirectToLogin()" title="Acessar Gerenciamento"/>
+            <div class="nav-links">
+                <a href="editar-foto.html" class="nav-link">Atualização Ramal</a>
+                <div class="login-icon">
+                    <img src="admin.png" alt="Login" onclick="redirectToLogin()" title="Acessar Gerenciamento"/>
+                </div>
             </div>
             <div class="search-filters">
                 <input type="text" id="filterName" placeholder="Buscar por nome"/>
@@ -34,10 +39,14 @@
     </nav>
     <h1>RAMAIS</h1>
     <div class="container">
-       <!-- Lista de Ramais por Setor -->
+        <!-- Lista de Ramais por Setor -->
         <div id="ramaisContainer">
-            <!-- Os ramais serão populados dinamicamente por setor -->
-            <table id="peopleTable"></table>
+            <!-- Os cards de ramais serão inseridos aqui dinamicamente -->
+        </div>
+        
+        <!-- Mensagem de carregamento -->
+        <div id="loadingMessage" style="text-align: center; padding: 20px;">
+            <p>Carregando lista de ramais...</p>
         </div>
     </div>
 

@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atualização de Ramal</title>
+    <link rel="stylesheet" href="stylesusuario.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .profile-upload {
+            max-width: 100%;
+            width: 100%;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-sizing: border-box;
+        }
+        
+        .profile-preview {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            overflow: hidden;
+            border: 3px solid #006c5b;
+            position: relative;
+            background-color: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .profile-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .initials-large {
+            font-size: 48px;
+            font-weight: bold;
+            color: #006c5b;
+        }
+        
+        .upload-btn-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+        
+        .btn-upload {
+            border: 2px dashed #006c5b;
+            color: #006c5b;
+            background-color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-upload:hover {
+            background-color: #f0f9f8;
+        }
+        
+        .upload-btn-wrapper input[type=file] {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .btn-save {
+            background-color: #006c5b;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.3s;
+        }
+        
+        .btn-save:hover {
+            background-color: #005a4d;
+        }
+        
+        .search-box {
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .search-box input[type="text"] {
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            margin-bottom: 15px;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+        
+        .user-info {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .user-info h3 {
+            margin-top: 0;
+            color: #006c5b;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-content">
+            <div class="logo">
+                <a href="index.html" style="display: block;">
+                    <img src="logo-intermartimaOFICIAL2024.png" alt="Logo"/>
+                </a>
+            </div>
+            <div class="login-icon">
+                <a href="index.html" class="nav-link">Voltar para Ramais</a>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <h1>Atualização de Ramal</h1>
+        
+        <div class="profile-upload">
+            <div class="search-box">
+                <h3>Pesquise seu ramal</h3>
+                <input type="text" id="searchRamal" placeholder="Digite seu nome ou número do ramal">
+                <div id="searchResults" class="search-results"></div>
+            </div>
+            
+            <div id="userInfo" class="user-info">
+                <h3 id="userName"></h3>
+                <p>Ramal: <span id="userRamal"></span></p>
+                <p>Setor: <span id="userSector"></span></p>
+                
+                <div class="profile-preview" id="profilePreview">
+                    <div class="initials-large" id="userInitials"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="photoInput">Escolha uma foto de perfil:</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <label for="photoInput" class="btn-upload" style="flex: 1; text-align: center; margin-bottom: 0;">
+                            Escolher Foto
+                        </label>
+                        <button type="button" id="removePhotoBtn" class="btn-remove" style="display: none;">
+                            Remover Foto
+                        </button>
+                    </div>
+                    <input type="file" id="photoInput" accept="image/*" style="display: none;">
+                    <p style="font-size: 12px; color: #666; margin-top: 5px;">Clique em "Escolher Foto" para adicionar ou trocar a imagem</p>
+                </div>
+                
+                <div class="form-group">
+                    <label>Status:</label>
+                    <div class="status-options">
+                        <button type="button" class="status-option status-available active" data-status="available" title="Disponível">
+                            <span class="status-dot"></span>
+                            <span class="status-text">Disponível</span>
+                        </button>
+                        <button type="button" class="status-option status-busy" data-status="busy" title="Ocupado">
+                            <span class="status-dot"></span>
+                            <span class="status-text">Ocupado</span>
+                        </button>
+                        <button type="button" class="status-option status-meeting" data-status="meeting" title="Em reunião">
+                            <span class="status-dot"></span>
+                            <span class="status-text">Em reunião</span>
+                        </button>
+                        <button type="button" class="status-option status-lunch" data-status="lunch" title="Almoço">
+                            <span class="status-dot"></span>
+                            <span class="status-text">Almoço</span>
+                        </button>
+                        <button type="button" class="status-option status-away" data-status="away" title="Ausente">
+                            <span class="status-dot"></span>
+                            <span class="status-text">Ausente</span>
+                        </button>
+                        <button type="button" class="status-option status-vacation" data-status="vacation" title="Férias">
+                            <span class="status-dot"></span>
+                            <span class="status-text">Férias</span>
+                        </button>
+                    </div>
+                    <input type="hidden" id="userStatus" value="available">
+                </div>
+                
+                <button id="saveBtn" class="btn-save" disabled>Salvar Alterações</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @media (max-width: 768px) {
+            .profile-upload {
+                padding: 15px;
+                margin: 10px;
+                width: calc(100% - 20px);
+            }
+            
+            .profile-preview {
+                width: 120px;
+                height: 120px;
+            }
+            
+            .initials-large {
+                font-size: 36px;
+            }
+            
+            .form-group {
+                width: 100%;
+            }
+            
+            /* Estilos movidos para o arquivo stylesusuario.css */
+            
+            .btn-upload, .btn-remove {
+                font-size: 14px;
+                padding: 8px 12px;
+            }
+        }
+    </style>
+    <script type="module" src="editar-foto.js"></script>
+</body>
+</html>

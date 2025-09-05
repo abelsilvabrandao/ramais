@@ -23,10 +23,17 @@ let people = [];
 // Função para buscar pessoas do Firestore
 async function fetchPeople() {
     const peopleCollection = collection(db, 'people');
+    const loadingMessage = document.getElementById('loadingMessage');
+    
     onSnapshot(peopleCollection, (snapshot) => {
         people = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         renderPeopleList(); // Chama a função que renderiza a lista de pessoas
         fetchUnitsAndSectors(); // Chama a função para carregar as unidades e setores nos filtros
+        
+        // Esconde a mensagem de carregamento após carregar os dados
+        if (loadingMessage) {
+            loadingMessage.style.display = 'none';
+        }
     });
 }
 
@@ -58,7 +65,16 @@ function fetchUnitsAndSectors() {
     });
 }
 
-// Função para renderizar a lista de pessoas por setor
+// Função para obter as iniciais do nome
+function getInitials(name) {
+    return name
+        .split(' ')
+        .map(part => part[0])
+        .join('')
+        .toUpperCase()
+        .substring(0, 2);
+}
+
 // Função para renderizar a lista de pessoas por setor
 function renderPeopleList() {
     const ramaisContainer = document.getElementById('ramaisContainer');
@@ -81,40 +97,103 @@ function renderPeopleList() {
         sectorTitle.textContent = sector;
         sectorDiv.appendChild(sectorTitle);
 
-        // Criação da tabela para o setor
-        const table = document.createElement('table');
-        table.className = 'peopleTable'; // Adiciona uma classe para estilização
+        // Container para os cards
+        const cardsContainer = document.createElement('div');
+        cardsContainer.className = 'people-cards';
 
-        // Cabeçalho da tabela
-        const thead = document.createElement('thead');
-        thead.innerHTML = `
-            <tr>
-                <th>Nome</th>
-                <th>Unidade</th>
-                <th>Ramal</th>
-            </tr>
-        `;
-        table.appendChild(thead);
-
-        // Corpo da tabela
-        const tbody = document.createElement('tbody');
-
-        // Lista de pessoas no setor
-        sectors[sector].forEach(person => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${person.name}</td>
-                <td>${person.unit}</td>
-                <td><b>${person.extension}</b></td>
+        // Cria cards para cada pessoa no setor
+        sectors[sector].sort((a, b) => a.name.localeCompare(b.name)).forEach(person => {
+            const card = document.createElement('div');
+            card.className = 'person-card';
+            
+            // Iniciais ou foto do perfil
+            const profilePic = document.createElement('div');
+            profilePic.className = 'profile-picture';
+            
+            // Se a pessoa tiver uma foto (base64 ou URL), use-a, senão mostre as iniciais
+            if (person.photoBase64) {
+                const img = document.createElement('img');
+                img.src = person.photoBase64;
+                img.alt = person.name;
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.borderRadius = '50%';
+                img.style.objectFit = 'cover';
+                profilePic.appendChild(img);
+            } else if (person.photoUrl) {
+                const img = document.createElement('img');
+                img.src = person.photoUrl;
+                img.alt = person.name;
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.borderRadius = '50%';
+                img.style.objectFit = 'cover';
+                profilePic.appendChild(img);
+            } else {
+                const initials = document.createElement('div');
+                initials.className = 'initials';
+                initials.textContent = getInitials(person.name);
+                profilePic.appendChild(initials);
+            }
+            
+            // Adicionar badge de status
+            const statusBadge = document.createElement('div');
+            // Usar o status da pessoa ou 'available' como padrão
+            const statusType = person.status || 'available';
+            statusBadge.className = `status-badge status-${statusType}`;
+            
+            // Mapear status para emojis e nomes (igual à tela de edição)
+            const statusInfo = {
+                'available': { emoji: '🟢', name: 'Disponível' },
+                'busy': { emoji: '🟠', name: 'Ocupado' },
+                'meeting': { emoji: '🔴', name: 'Em reunião' },
+                'lunch': { emoji: '🍽️', name: 'Almoço' },
+                'away': { emoji: '⏰', name: 'Ausente' },
+                'vacation': { emoji: '🏖️', name: 'Férias' }
+            };
+            
+            const status = statusInfo[statusType] || { emoji: '❔', name: 'Indisponível' };
+            statusBadge.innerHTML = `
+                <div class="status-dot"></div>
+                <span class="status-text">${status.name}</span>
             `;
-            tbody.appendChild(row);
+            card.appendChild(statusBadge);
+            
+            // Nome da pessoa
+            const nameElement = document.createElement('div');
+            nameElement.className = 'person-name';
+            nameElement.textContent = person.name;
+            
+            // Setor em verde escuro centralizado
+            const sectorElement = document.createElement('div');
+            sectorElement.className = 'person-sector';
+            sectorElement.textContent = person.sector || 'Setor não informado';
+            
+            // Unidade
+            const unitElement = document.createElement('div');
+            unitElement.className = 'person-unit';
+            unitElement.textContent = person.unit;
+            
+            // Ramal
+            const extensionElement = document.createElement('div');
+            extensionElement.className = 'extension';
+            extensionElement.textContent = person.extension;
+            
+            // Adiciona todos os elementos ao card
+            card.appendChild(profilePic);
+            card.appendChild(nameElement);
+            card.appendChild(sectorElement);
+            card.appendChild(unitElement);
+            card.appendChild(extensionElement);
+            
+            cardsContainer.appendChild(card);
         });
-
-        table.appendChild(tbody);
-        sectorDiv.appendChild(table); // Adiciona a tabela ao setor
-        ramaisContainer.appendChild(sectorDiv); // Adiciona o setor ao contêiner principal
+        
+        sectorDiv.appendChild(cardsContainer);
+        ramaisContainer.appendChild(sectorDiv);
     });
 }
+
 // Função para aplicar filtros
 window.applyFilters = function() {
     const nameFilter = document.getElementById('filterName').value.toLowerCase();
@@ -137,6 +216,15 @@ function renderFilteredPeopleList(filteredPeople) {
     const ramaisContainer = document.getElementById('ramaisContainer');
     ramaisContainer.innerHTML = ''; // Limpa a lista antes de popular
 
+    // Se não houver resultados, mostra uma mensagem
+    if (filteredPeople.length === 0) {
+        const noResults = document.createElement('div');
+        noResults.className = 'no-results';
+        noResults.textContent = 'Nenhum resultado encontrado';
+        ramaisContainer.appendChild(noResults);
+        return;
+    }
+
     // Agrupa pessoas filtradas por setor
     const sectors = filteredPeople.reduce((acc, person) => {
         acc[person.sector] = acc[person.sector] || [];
@@ -154,40 +242,100 @@ function renderFilteredPeopleList(filteredPeople) {
         sectorTitle.textContent = sector;
         sectorDiv.appendChild(sectorTitle);
 
-        // Criação da tabela para o setor
-        const table = document.createElement('table');
-        table.className = 'peopleTable'; // Adiciona uma classe para estilização
+        // Container para os cards
+        const cardsContainer = document.createElement('div');
+        cardsContainer.className = 'people-cards';
 
-        // Cabeçalho da tabela
-        const thead = document.createElement('thead');
-        thead.innerHTML = `
-            <tr>
-                <th>Nome</th>
-                <th>Unidade</th>
-                <th>Ramal</th>
-            </tr>
-        `;
-        table.appendChild(thead);
-
-        // Corpo da tabela
-        const tbody = document.createElement('tbody');
-
-        // Lista de pessoas no setor filtrado
-        sectors[sector].forEach(person => {
-            const row = document.createElement('tr');
-
-            row.innerHTML = `
-                <td>${person.name}</td>
-                <td class="centered">${person.unit}</td>
-                <td class="centered">${person.extension}</td>
+        // Cria cards para cada pessoa no setor filtrado
+        sectors[sector].sort((a, b) => a.name.localeCompare(b.name)).forEach(person => {
+            const card = document.createElement('div');
+            card.className = 'person-card';
+            
+            // Iniciais ou foto do perfil
+            const profilePic = document.createElement('div');
+            profilePic.className = 'profile-picture';
+            
+            // Se a pessoa tiver uma foto (base64 ou URL), use-a, senão mostre as iniciais
+            if (person.photoBase64) {
+                const img = document.createElement('img');
+                img.src = person.photoBase64;
+                img.alt = person.name;
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.borderRadius = '50%';
+                img.style.objectFit = 'cover';
+                profilePic.appendChild(img);
+            } else if (person.photoUrl) {
+                const img = document.createElement('img');
+                img.src = person.photoUrl;
+                img.alt = person.name;
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.borderRadius = '50%';
+                img.style.objectFit = 'cover';
+                profilePic.appendChild(img);
+            } else {
+                const initials = document.createElement('div');
+                initials.className = 'initials';
+                initials.textContent = getInitials(person.name);
+                profilePic.appendChild(initials);
+            }
+            
+            // Adicionar badge de status
+            const statusBadge = document.createElement('div');
+            // Usar o status da pessoa ou 'available' como padrão
+            const statusType = person.status || 'available';
+            statusBadge.className = `status-badge status-${statusType}`;
+            
+            // Mapear status para emojis e nomes (igual à tela de edição)
+            const statusInfo = {
+                'available': { emoji: '🟢', name: 'Disponível' },
+                'busy': { emoji: '🟠', name: 'Ocupado' },
+                'meeting': { emoji: '🔴', name: 'Em reunião' },
+                'lunch': { emoji: '🍽️', name: 'Almoço' },
+                'away': { emoji: '⏰', name: 'Ausente' },
+                'vacation': { emoji: '🏖️', name: 'Férias' }
+            };
+            
+            const status = statusInfo[statusType] || { emoji: '❔', name: 'Indisponível' };
+            statusBadge.innerHTML = `
+                <div class="status-dot"></div>
+                <span class="status-text">${status.name}</span>
             `;
-
-            tbody.appendChild(row);
+            card.appendChild(statusBadge);
+            
+            // Nome da pessoa
+            const nameElement = document.createElement('div');
+            nameElement.className = 'person-name';
+            nameElement.textContent = person.name;
+            
+            // Setor em verde escuro centralizado
+            const sectorElement = document.createElement('div');
+            sectorElement.className = 'person-sector';
+            sectorElement.textContent = person.sector || 'Setor não informado';
+            
+            // Unidade
+            const unitElement = document.createElement('div');
+            unitElement.className = 'person-unit';
+            unitElement.textContent = person.unit;
+            
+            // Ramal
+            const extensionElement = document.createElement('div');
+            extensionElement.className = 'extension';
+            extensionElement.textContent = person.extension;
+            
+            // Adiciona todos os elementos ao card
+            card.appendChild(profilePic);
+            card.appendChild(nameElement);
+            card.appendChild(sectorElement);
+            card.appendChild(unitElement);
+            card.appendChild(extensionElement);
+            
+            cardsContainer.appendChild(card);
         });
-
-        table.appendChild(tbody);
-        sectorDiv.appendChild(table); // Adiciona a tabela ao setor
-        ramaisContainer.appendChild(sectorDiv); // Adiciona o setor ao contêiner principal
+        
+        sectorDiv.appendChild(cardsContainer);
+        ramaisContainer.appendChild(sectorDiv);
     });
 }
 
