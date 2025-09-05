@@ -695,7 +695,7 @@ th {
 }
 
 .person-sector {
-    font-size: 0.8rem;
+    font-size: 0.7rem;
     font-weight: 500;
     color: #1a5f4a;
     text-align: center;
@@ -710,8 +710,8 @@ th {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    margin: 8px 0 4px;
-    word-break: break-word;
+    margin: 6px 0 4px;
+    word-break: break-word
 }
 
 .person-unit {
