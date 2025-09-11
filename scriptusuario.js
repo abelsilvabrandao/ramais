@@ -164,10 +164,14 @@ function renderPeopleList() {
             nameElement.className = 'person-name';
             nameElement.textContent = person.name;
             
-            // Setor em verde escuro centralizado
+            // Setor
             const sectorElement = document.createElement('div');
             sectorElement.className = 'person-sector';
             sectorElement.textContent = person.sector || 'Setor não informado';
+            
+            // Container para unidade e ramal
+            const infoContainer = document.createElement('div');
+            infoContainer.className = 'person-info-container';
             
             // Unidade
             const unitElement = document.createElement('div');
@@ -177,14 +181,269 @@ function renderPeopleList() {
             // Ramal
             const extensionElement = document.createElement('div');
             extensionElement.className = 'extension';
-            extensionElement.textContent = person.extension;
+            
+            // Create phone icon
+            const phoneIcon = document.createElement('i');
+            phoneIcon.className = 'fas fa-phone';
+            phoneIcon.style.marginRight = '5px';
+            
+            // Add phone icon and extension number
+            extensionElement.appendChild(phoneIcon);
+            extensionElement.appendChild(document.createTextNode(person.extension));
+            
+            // Adiciona unidade e ramal ao container
+            infoContainer.appendChild(unitElement);
+            infoContainer.appendChild(extensionElement);
+
+            // Store the original content of the extension element
+            const originalExtensionContent = extensionElement.innerHTML;
+            
+            // Add functionality to show full number and call link when clicking on the extension
+            extensionElement.style.cursor = 'pointer';
+            extensionElement.title = 'Clique para ver o número completo e ligar';
+            extensionElement.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent event bubbling
+                
+                // Check if popup already exists, remove it if it does
+                const existingPopup = extensionElement.querySelector('.full-number-popup');
+                if (existingPopup) {
+                    // Restore the original content when closing
+                    extensionElement.innerHTML = originalExtensionContent;
+                    existingPopup.remove();
+                    return;
+                }
+
+                // Cria o popup com o número completo e link de chamada
+                const fullNumber = '713879' + person.extension;
+                const popup = document.createElement('div');
+                popup.className = 'full-number-popup';
+
+                // Format the phone number as (71) 3879-9759
+                const formattedNumber = `(${fullNumber.substring(0, 2)}) ${fullNumber.substring(2, 6)}-${fullNumber.substring(6)}`;
+                
+                // Create the slide container
+                const slideContainer = document.createElement('div');
+                slideContainer.className = 'slide-container';
+                slideContainer.style.position = 'relative';
+                slideContainer.style.width = '100%';
+                slideContainer.style.height = '50px';
+                slideContainer.style.backgroundColor = '#4CAF50';
+                slideContainer.style.borderRadius = '25px';
+                slideContainer.style.overflow = 'hidden';
+                slideContainer.style.cursor = 'pointer';
+                
+                // Create the slider
+                const slider = document.createElement('div');
+                slider.className = 'slider';
+                
+                // Add white telephone symbol
+                const phoneSymbol = document.createElement('span');
+                phoneSymbol.textContent = '📞'; // White telephone symbol
+                phoneSymbol.style.color = 'white';
+                phoneSymbol.style.fontSize = '18px';
+                phoneSymbol.style.lineHeight = '1';
+                phoneSymbol.style.display = 'flex';
+                phoneSymbol.style.alignItems = 'center';
+                phoneSymbol.style.justifyContent = 'center';
+                phoneSymbol.style.width = '100%';
+                phoneSymbol.style.height = '100%';
+                phoneSymbol.style.filter = 'brightness(0) invert(1)';
+                slider.appendChild(phoneSymbol);
+                
+                // Create call text
+                const callText = document.createElement('div');
+                callText.className = 'call-text';
+                callText.textContent = 'Arraste para ligar';
+                callText.style.color = 'rgba(255, 255, 255, 0.9)';
+                callText.style.position = 'absolute';
+                callText.style.width = '100%';
+                callText.style.textAlign = 'center';
+                callText.style.fontWeight = 'normal';
+                callText.style.fontSize = '0.9em';
+                callText.style.pointerEvents = 'none';
+                
+                // Create call link (invisible, will be triggered on slide)
+                const callLink = document.createElement('a');
+                callLink.href = `tel:${fullNumber}`;
+                callLink.textContent = '';
+                callLink.style.display = 'none';
+                
+                // Add elements to container
+                slideContainer.appendChild(slider);
+                slideContainer.appendChild(callText);
+                slideContainer.appendChild(callLink);
+                
+                // Add slide functionality
+                let isDragging = false;
+                let startX = 0;
+                let currentX = 0;
+                let animationFrameId = null;
+                let maxX = 0;
+                
+                // Add active class to card when popup is open
+                card.classList.add('active');
+                
+                const startDrag = (e) => {
+                    e.preventDefault();
+                    isDragging = true;
+                    startX = e.type === 'mousedown' ? e.clientX : e.touches[0].clientX;
+                    currentX = 0;
+                    maxX = slideContainer.offsetWidth - slider.offsetWidth;
+                    
+                    // Add active state
+                    slideContainer.classList.add('dragging');
+                    slider.style.transition = 'none'; // Disable transition during drag
+                    
+                    // Add event listeners for mouse/touch move and end
+                    document.addEventListener('mousemove', drag, { passive: false });
+                    document.addEventListener('touchmove', drag, { passive: false });
+                    document.addEventListener('mouseup', endDrag);
+                    document.addEventListener('touchend', endDrag);
+                    
+                    // Prevent text selection during drag
+                    document.body.style.userSelect = 'none';
+                };
+                
+                const drag = (e) => {
+                    if (!isDragging) return;
+                    e.preventDefault();
+                    
+                    const x = e.type === 'mousemove' ? e.clientX : e.touches[0].clientX;
+                    const deltaX = x - startX;
+                    
+                    // Apply rubber band effect when dragging beyond limits
+                    if (deltaX < 0) {
+                        currentX = deltaX * 0.3; // Elastic effect when dragging left
+                    } else if (deltaX > maxX) {
+                        const extra = deltaX - maxX;
+                        currentX = maxX + (extra * 0.3); // Elastic effect when dragging right
+                    } else {
+                        currentX = deltaX;
+                    }
+                    
+                    // Update slider position
+                    if (!animationFrameId) {
+                        animationFrameId = requestAnimationFrame(() => {
+                            slider.style.transform = `translateX(${currentX}px)`;
+                            animationFrameId = null;
+                            
+                            // Change background color based on drag progress
+                            const progress = Math.min(1, Math.max(0, currentX / maxX));
+                            slider.style.backgroundColor = `rgb(${
+                                Math.round(46 + (27 * progress))
+                            }, ${
+                                Math.round(125 + (32 * progress))
+                            }, ${
+                                Math.round(50 + (32 * progress))
+                            })`;
+                        });
+                    }
+                    
+                    // If dragged to the end, trigger the call
+                    if (deltaX >= maxX - 5) {
+                        slider.style.transform = `translateX(${maxX}px)`;
+                        slider.style.backgroundColor = '#4CAF50';
+                        callLink.click();
+                        endDrag();
+                    }
+                };
+                
+                const endDrag = () => {
+                    if (!isDragging) return;
+                    isDragging = false;
+                    
+                    // Re-enable transitions
+                    slider.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1), background-color 0.2s ease';
+                    
+                    // Remove active state
+                    slideContainer.classList.remove('dragging');
+                    
+                    // Reset slider position with smooth animation
+                    resetSlider();
+                    
+                    // Remove event listeners
+                    document.removeEventListener('mousemove', drag);
+                    document.removeEventListener('touchmove', drag);
+                    document.removeEventListener('mouseup', endDrag);
+                    document.removeEventListener('touchend', endDrag);
+                    
+                    // Re-enable text selection
+                    document.body.style.userSelect = '';
+                };
+                
+                const resetSlider = () => {
+                    if (slider) {
+                        slider.style.transform = 'translateX(0)';
+                        slider.style.backgroundColor = '#2E7D32';
+                    }
+                };
+                
+                // Add event listeners for mouse and touch
+                slideContainer.addEventListener('mousedown', startDrag);
+                slideContainer.addEventListener('touchstart', startDrag, { passive: false });
+                
+                // Close popup when clicking outside
+                const closeOnOutsideClick = (e) => {
+                    if (!popup.contains(e.target) && !extensionElement.contains(e.target)) {
+                        // Restore the original extension element content
+                        const extensionIcon = document.createElement('i');
+                        extensionIcon.className = 'fas fa-phone';
+                        extensionElement.innerHTML = '';
+                        extensionElement.appendChild(extensionIcon);
+                        extensionElement.appendChild(document.createTextNode(` ${person.extension}`));
+                        
+                        // Remove the popup and clean up
+                        popup.remove();
+                        card.classList.remove('active');
+                        document.removeEventListener('click', closeOnOutsideClick);
+                        document.removeEventListener('touchstart', closeOnOutsideClick);
+                    }
+                };
+                
+                // Add click outside listener with a small delay to prevent immediate closing
+                setTimeout(() => {
+                    document.addEventListener('click', closeOnOutsideClick);
+                    document.addEventListener('touchstart', closeOnOutsideClick, { passive: true });
+                }, 100);
+                
+                // Create the popup content
+                const popupContent = document.createElement('div');
+                popupContent.style.padding = '15px';
+                popupContent.style.textAlign = 'center';
+                
+                // Add the phone number (in white)
+                const numberDisplay = document.createElement('div');
+                numberDisplay.textContent = formattedNumber;
+                numberDisplay.style.color = 'white';
+                numberDisplay.style.fontSize = '18px';
+                numberDisplay.style.marginBottom = '15px';
+                numberDisplay.style.fontWeight = 'bold';
+                
+                // Add elements to popup
+                popupContent.appendChild(numberDisplay);
+                popupContent.appendChild(slideContainer);
+                popup.appendChild(popupContent);
+                callLink.insertBefore(phoneIcon, callLink.firstChild);
+                callLink.style.fontWeight = 'bold';
+                
+                // Hover effect
+                callLink.onmouseover = () => {
+                    callLink.style.backgroundColor = '#C8E6C9';
+                };
+                callLink.onmouseout = () => {
+                    callLink.style.backgroundColor = '#E8F5E9';
+                };
+
+                popup.appendChild(callLink);
+
+                extensionElement.appendChild(popup);
+            });
             
             // Adiciona todos os elementos ao card
             card.appendChild(profilePic);
             card.appendChild(nameElement);
             card.appendChild(sectorElement);
-            card.appendChild(unitElement);
-            card.appendChild(extensionElement);
+            card.appendChild(infoContainer);
             
             cardsContainer.appendChild(card);
         });
@@ -309,10 +568,14 @@ function renderFilteredPeopleList(filteredPeople) {
             nameElement.className = 'person-name';
             nameElement.textContent = person.name;
             
-            // Setor em verde escuro centralizado
+            // Setor
             const sectorElement = document.createElement('div');
             sectorElement.className = 'person-sector';
             sectorElement.textContent = person.sector || 'Setor não informado';
+            
+            // Container para unidade e ramal
+            const infoContainer = document.createElement('div');
+            infoContainer.className = 'person-info-container';
             
             // Unidade
             const unitElement = document.createElement('div');
@@ -322,14 +585,25 @@ function renderFilteredPeopleList(filteredPeople) {
             // Ramal
             const extensionElement = document.createElement('div');
             extensionElement.className = 'extension';
-            extensionElement.textContent = person.extension;
+            
+            // Create phone icon
+            const phoneIcon = document.createElement('i');
+            phoneIcon.className = 'fas fa-phone';
+            phoneIcon.style.marginRight = '5px';
+            
+            // Add phone icon and extension number
+            extensionElement.appendChild(phoneIcon);
+            extensionElement.appendChild(document.createTextNode(person.extension));
+            
+            // Adiciona unidade e ramal ao container
+            infoContainer.appendChild(unitElement);
+            infoContainer.appendChild(extensionElement);
             
             // Adiciona todos os elementos ao card
             card.appendChild(profilePic);
             card.appendChild(nameElement);
             card.appendChild(sectorElement);
-            card.appendChild(unitElement);
-            card.appendChild(extensionElement);
+            card.appendChild(infoContainer);
             
             cardsContainer.appendChild(card);
         });
