@@ -24,16 +24,11 @@
                 </div>
             </div>
             <div class="search-filters">
-                <input type="text" id="filterName" placeholder="Buscar por nome"/>
-                <select id="filterSector">
-                    <option value="">Selecione Setor</option>
-                    <!-- As opções serão populadas dinamicamente -->
-                </select>
-                <select id="filterUnit">
+                <input type="text" id="filterName" placeholder="Buscar por nome" oninput="applyFilters()"/>
+                <select id="filterUnit" onchange="applyFilters()">
                     <option value="">Selecione Unidade</option>
                     <!-- As opções serão populadas dinamicamente -->
                 </select>
-                <button onclick="applyFilters()">Aplicar Filtros</button>
             </div>
             <!-- Ícone de login -->
         </div>

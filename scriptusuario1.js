@@ -99,10 +99,9 @@ function renderPeopleList() {
         const cardsContainer = document.createElement('div');
         cardsContainer.className = 'people-cards';
         
-        // Fecha todos os acordeões por padrão no primeiro carregamento
-        // Se não houver estado salvo, fecha o acordeão
+        // Verifica o estado salvo no localStorage
         const savedState = localStorage.getItem(`sector_${sector}`);
-        if (savedState === 'collapsed' || savedState === null) {
+        if (savedState === 'collapsed') {
             sectorDiv.classList.add('collapsed');
         }
 
