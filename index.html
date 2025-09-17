@@ -2,12 +2,69 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#006c5b">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Ramais">
+    <meta name="description" content="Sistema de consulta de ramais da Intermarítima">
+    <meta name="mobile-web-app-capable" content="yes">
+    
     <title>Lista de Ramais</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- iOS Icons -->
+    <link rel="apple-touch-icon" href="icons/icon-152x152.png">
+    
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="icons/icon-72x72.png">
     <link rel="stylesheet" href="stylesusuario.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+    <!-- PWA Service Worker -->
+    <script>
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful');
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+        
+        // Show install prompt for PWA
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevent Chrome 67 and earlier from automatically showing the prompt
+            e.preventDefault();
+            // Stash the event so it can be triggered later
+            deferredPrompt = e;
+            
+            // Show custom install button or prompt
+            setTimeout(() => {
+                if (confirm('Deseja instalar o aplicativo Ramais em sua tela inicial?')) {
+                    // Show the install prompt
+                    deferredPrompt.prompt();
+                    // Wait for the user to respond to the prompt
+                    deferredPrompt.userChoice.then((choiceResult) => {
+                        if (choiceResult.outcome === 'accepted') {
+                            console.log('User accepted the install prompt');
+                        } else {
+                            console.log('User dismissed the install prompt');
+                        }
+                        deferredPrompt = null;
+                    });
+                }
+            }, 3000); // Show prompt after 3 seconds
+        });
+    </script>
 </head>
 <body>
     <nav class="navbar">
@@ -18,22 +75,31 @@
                 </a>
             </div>
             <div class="nav-links">
-                <a href="editar-foto.html" class="nav-link">Atualização Ramal</a>
+                <a href="editar-foto.html" class="update-ramal-icon" title="Atualização Ramal">Atualização Ramal</a>
                 <div class="login-icon">
                     <img src="admin.png" alt="Login" onclick="redirectToLogin()" title="Acessar Gerenciamento"/>
                 </div>
             </div>
-            <div class="search-filters">
-                <input type="text" id="filterName" placeholder="Buscar por nome" oninput="applyFilters()"/>
-                <select id="filterUnit" onchange="applyFilters()">
+            <!-- Ícone de login -->
+        </div>
+        <h1>SETORES & RAMAIS</h1>
+        <div class="search-filters">
+            <div class="unit-selector">
+                <select id="filterUnit" onchange="applyFilters()" title="Selecione a unidade">
                     <option value="">Selecione Unidade</option>
                     <!-- As opções serão populadas dinamicamente -->
                 </select>
+                <i class="fas fa-chevron-down"></i>
             </div>
-            <!-- Ícone de login -->
+            <div class="search-container">
+                <input type="text" id="filterName" placeholder="Com quem deseja falar?" oninput="applyFilters()"/>
+                <button id="clearSearch" class="clear-button" style="display: none;">
+                    <i class="fas fa-times-circle"></i>
+                </button>
+                <i class="fas fa-search search-icon"></i>
+            </div>
         </div>
     </nav>
-    <h1>RAMAIS</h1>
     <div class="container">
         <!-- Lista de Ramais por Setor -->
         <div id="ramaisContainer">
@@ -41,12 +107,13 @@
         </div>
         
         <!-- Mensagem de carregamento -->
-        <div id="loadingMessage" style="text-align: center; padding: 20px;">
-            <p>Carregando lista de ramais...</p>
+        <div id="loadingMessage" class="loading-container">
+            <img src="loading-animation.svg" alt="Carregando" class="loading-animation">
+            <p class="loading-text">Carregando Ramais...</p>
         </div>
     </div>
 
-    <script type="module" src="scriptusuario.js"></script>
+    <script type="module" src="scriptusuario_clean.js"></script>
     <script>
         function redirectToLogin() {
             // Abre o modal de login com SweetAlert

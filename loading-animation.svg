@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200px" height="200px" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#006c5b" />
+      <stop offset="100%" stop-color="#4caf50" />
+    </linearGradient>
+  </defs>
+  <g>
+    <path d="M64,20A44,44 0 1,1 64,108A44,44 0 1,1 64,20" fill="none" stroke="url(#gradient)" stroke-width="8" stroke-linecap="round" stroke-dasharray="69.115 20.9435">
+      <animateTransform 
+        attributeName="transform" 
+        type="rotate" 
+        from="0 64 64" 
+        to="360 64 64" 
+        dur="1.5s" 
+        repeatCount="indefinite"
+        keyTimes="0;1"
+        calcMode="spline"
+        keySplines="0.5 0 0.5 1">
+      </animateTransform>
+      <animate 
+        attributeName="stroke-dashoffset" 
+        values="0;138.23" 
+        dur="1.5s" 
+        repeatCount="indefinite"
+        keyTimes="0;1"
+        calcMode="spline"
+        keySplines="0.5 0 0.5 1">
+      </animate>
+    </path>
+  </g>
+</svg>
