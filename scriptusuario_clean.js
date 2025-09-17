@@ -475,7 +475,7 @@ window.applyFilters = function() {
         ramaisContainer.innerHTML = ''; // Garante que o container está vazio
         const noResults = document.createElement('div');
         noResults.className = 'no-results';
-        noResults.textContent = 'Nenhum resultado encontrado';
+        noResults.innerHTML = '<i class="fas fa-exclamation-circle error-icon"></i> Nenhum resultado encontrado';
         ramaisContainer.appendChild(noResults);
     }
 };
