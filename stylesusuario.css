@@ -1166,6 +1166,36 @@ th {
     padding-right: 0;
 }
 
+.scroll-top-btn {
+    position: fixed;
+    right: 18px;
+    bottom: 24px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #009e6f;
+    color: #fff;
+    border: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2em;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s, opacity 0.2s;
+    z-index: 2000;
+    opacity: 0.94;
+}
+.scroll-top-btn:hover {
+    background: #007652;
+    opacity: 1;
+    transform: scale(1.07);
+}
+@media (min-width: 769px) {
+    .scroll-top-btn { display: none !important; }
+}
+
+
 .navbar-content {
     display: flex;
     align-items: center;
