@@ -1,3 +1,8 @@
+// --- SOCKET.IO CLIENT PARA STATUS EM TEMPO REAL ---
+import io from "https://cdn.socket.io/4.7.5/socket.io.esm.min.js";
+const socket = io('http://localhost:3001');
+// --------------------------------------------------
+
 // Configuração do Firebase
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
 import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
@@ -19,6 +24,21 @@ const db = getFirestore(app);
 
 // Variáveis globais
 let people = [];
+
+// Atualização em tempo real de status via socket.io
+socket.on('statusUpdate', ({ userId, status }) => {
+    let updated = false;
+    people = people.map(person => {
+        if (person.id === userId) {
+            updated = true;
+            return { ...person, status };
+        }
+        return person;
+    });
+    if (updated) {
+        renderPeople(people);
+    }
+});
 
 // Função para buscar pessoas do Firestore
 async function fetchPeople() {

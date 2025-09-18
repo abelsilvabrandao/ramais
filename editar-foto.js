@@ -1,3 +1,8 @@
+// --- SOCKET.IO CLIENT PARA STATUS EM TEMPO REAL ---
+import io from "https://cdn.socket.io/4.7.5/socket.io.esm.min.js";
+const socket = io('http://localhost:3001');
+// --------------------------------------------------
+
 // Configuração do Firebase
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
 import { 
@@ -728,6 +733,8 @@ saveBtn.addEventListener('click', async () => {
         try {
             console.log('9. Enviando atualização para o Firebase...');
             await updateDoc(userRef, updates);
+// Notificar em tempo real outros clientes
+socket.emit('updateStatus', { userId: selectedUser.id, status: updates.status });
             console.log('10. Documento atualizado com sucesso no Firebase!');
             
             // Verificar se a atualização foi realmente salva

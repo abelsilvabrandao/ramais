@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Atualização de Ramal</title>
     <link rel="stylesheet" href="stylesusuario.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         .profile-upload {
@@ -170,9 +171,9 @@
                         <label for="photoInput" class="btn-upload" style="flex: 1; text-align: center; margin-bottom: 0;">
                             Escolher Foto
                         </label>
-                        <button type="button" id="removePhotoBtn" class="btn-remove" style="display: none;">
-                            Remover Foto
-                        </button>
+                        <button type="button" id="removePhotoBtn" class="btn-remove" style="display: none;" title="Remover Foto">
+  <i class="fas fa-trash-alt"></i>
+</button>
                     </div>
                     <input type="file" id="photoInput" accept="image/*" style="display: none;">
                     <p style="font-size: 12px; color: #666; margin-top: 5px;">Clique em "Escolher Foto" para adicionar ou trocar a imagem</p>
