@@ -68,7 +68,27 @@ button:hover {
     color: white;
     font-weight: bold;
     font-size: 1rem;
+    white-space: nowrap;
 }
+.peopleTable th.actions, .peopleTable td.actions {
+    text-align: center;
+    min-width: 110px;
+    max-width: 1%;
+    /* Remove qualquer padding extra que possa causar recuo */
+    padding-left: 8px;
+    padding-right: 8px;
+}
+.peopleTable {
+    width: 100% !important;
+    table-layout: auto !important;
+}
+.peopleTable thead tr {
+    background-color: #006c5b !important;
+}
+.peopleTable thead th {
+    background-color: #006c5b !important;
+}
+
 
 .person-table-photo {
     width: 38px !important;

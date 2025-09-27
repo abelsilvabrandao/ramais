@@ -748,8 +748,20 @@ function renderFilteredPeopleList(filteredPeople) {
 
     filteredPeople.forEach((person, index) => {
         const row = document.createElement('tr');
+        // Monta célula do nome com foto/iniciais igual ao renderPeopleList
+        let nameCellHtml = `<td class="person-name-cell">`;
+        nameCellHtml += `<span class="person-table-photo">`;
+        if (person.photo) {
+            nameCellHtml += `<img src="${person.photo}" alt="${person.name}" />`;
+        } else {
+            const initials = (person.name || '').split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase();
+            nameCellHtml += `<span class="person-table-initials">${initials}</span>`;
+        }
+        nameCellHtml += `</span>`;
+        nameCellHtml += `<span>${person.name}</span></td>`;
+
         row.innerHTML = `
-            <td>${person.name}</td>
+            ${nameCellHtml}
             <td>${person.unit}</td>
             <td>${person.sector}</td>
             <td>${person.extension}</td>
