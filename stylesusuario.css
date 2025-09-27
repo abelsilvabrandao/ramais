@@ -1,3 +1,36 @@
+/* Botão de voltar padrão navbar */
+.btn-back {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
+    background: #fff;
+    border: 1.5px solid #006c5b;
+    border-radius: 25px;
+    color: #006c5b;
+    font-size: 1rem;
+    font-weight: 500;
+    box-shadow: 0 2px 6px rgba(0,108,91,0.08);
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, border 0.2s, box-shadow 0.2s;
+    outline: none;
+    margin-left: 16px;
+}
+.btn-back i {
+    font-size: 1.2em;
+    color: #006c5b;
+    transition: color 0.2s;
+}
+.btn-back:hover, .btn-back:focus {
+    background: #e8f5e9;
+    color: #005a4d;
+    border-color: #005a4d;
+    box-shadow: 0 4px 12px rgba(0,108,91,0.12);
+}
+.btn-back:hover i, .btn-back:focus i {
+    color: #005a4d;
+}
+
 /* Search container */
 .search-container {
     position: relative;
@@ -7,11 +40,13 @@
     max-width: 420px;
     min-width: 220px;
     margin: 0 auto;
+    justify-content: flex-start; /* Garante alinhamento à esquerda */
 }
+
 
 .search-container input[type="text"] {
     width: 100%;
-    padding: 12px 40px;
+    padding: 12px 56px 12px 16px; /* padding-right maior para x e lupa, padding-left padrão */
     border-radius: 25px;
     border: 1px solid #ddd;
     font-size: 14px;
@@ -51,8 +86,8 @@
 
 .clear-button {
     position: absolute;
-    right: 36px;
-    top: 50%;
+    right:3px; /* Mais próximo da lupa */
+    top: 30%;
     transform: translateY(-50%);
     background: transparent !important;
     border: none;
@@ -68,6 +103,24 @@
     box-shadow: none !important;
     transition: opacity 0.2s, transform 0.2s;
 }
+
+@media (max-width: 480px) {
+  .clear-button {
+    right: 12px !important; /* Exatamente alinhado com a lupa */
+    left: auto !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    z-index: 10 !important;
+  }
+  .search-container input[type="text"]::placeholder {
+    text-align: left !important;
+  }
+}
+
+.search-container input[type="text"] {
+    padding-right: 72px; /* Espaço extra para x e lupa */
+}
+
 
 .search-icon {
     position: absolute;

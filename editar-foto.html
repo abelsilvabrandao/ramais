@@ -134,16 +134,17 @@
 </head>
 <body>
     <nav class="navbar">
-        <div class="navbar-content">
-            <div class="logo">
-                <a href="index.html" style="display: block;">
-                    <img src="logo-intermartimaOFICIAL2024.png" alt="Logo"/>
-                </a>
-            </div>
-            <div class="login-icon">
-                <a href="index.html" class="nav-link">Voltar para Ramais</a>
-            </div>
-        </div>
+        <div class="navbar-content" style="display: flex; align-items: center; justify-content: space-between;">
+    <div class="logo">
+        <span style="display: block; cursor: default;">
+    <img src="logo-intermartimaOFICIAL2024.png" alt="Logo"/>
+</span>
+    </div>
+    <button onclick="window.history.back()" class="btn-back">
+        <i class="fas fa-arrow-left"></i>
+        <span>Voltar</span>
+    </button>
+</div>
     </nav>
     
     <div class="container">

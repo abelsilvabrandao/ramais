@@ -82,8 +82,27 @@ function renderPeopleList() {
     people.forEach((person) => {
         const row = document.createElement('tr');
     
+        // Célula do nome com foto/iniciais
         const nameCell = document.createElement('td');
-        nameCell.textContent = person.name;
+        nameCell.className = 'person-name-cell';
+        const photoWrapper = document.createElement('span');
+        photoWrapper.className = 'person-table-photo';
+        if (person.photo) {
+            const img = document.createElement('img');
+            img.src = person.photo;
+            img.alt = person.name;
+            photoWrapper.appendChild(img);
+        } else {
+            const initials = (person.name || '').split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase();
+            const initialsSpan = document.createElement('span');
+            initialsSpan.className = 'person-table-initials';
+            initialsSpan.textContent = initials;
+            photoWrapper.appendChild(initialsSpan);
+        }
+        nameCell.appendChild(photoWrapper);
+        const nameText = document.createElement('span');
+        nameText.textContent = person.name;
+        nameCell.appendChild(nameText);
     
         const unitCell = document.createElement('td');
         unitCell.textContent = person.unit;

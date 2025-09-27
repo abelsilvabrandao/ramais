@@ -7,43 +7,83 @@
     <!-- Usar o mesmo CSS do indexusuario.html -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <title>Gestão de Ramais</title>
+<style>
+.peopleTable .person-name-cell {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+.person-table-photo {
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  min-height: 38px !important;
+  border-radius: 50% !important;
+  background: #e1e8ed !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-right: 10px !important;
+  overflow: hidden !important;
+  border: 2px solid #006c5b !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
+  font-size: 1.2rem !important;
+}
+.person-table-initials {
+  color: #006c5b !important;
+  font-weight: 700 !important;
+  font-size: 1.1rem !important;
+  letter-spacing: 1px !important;
+  text-transform: uppercase !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+</style>
 </head>
 <body>
     <nav class="navbar">
         <div class="navbar-content">
-            <div class="logo">
-                <img src="logo-intermartimaOFICIAL2024.png" alt="Logo"/>
-            </div>
-            <div class="search-filters">
-                <input type="text" id="nameSearch" placeholder="Buscar por nome">
-                <select id="sectorSearch">
-                    <option value="">Selecione o Setor</option>
-                </select>
-                <select id="filtro-unidade">
-                    <option value="">Selecione a Unidade</option>
-                </select>
-                <button id="searchButton">Buscar</button> <!-- Botão busca -->
-            </div>
-        </div>
+    <div class="logo">
+        <span style="display: block; cursor: default;">
+            <img src="logo-intermartimaOFICIAL2024.png" alt="Logo"/>
+        </span>
+    </div>
+    <div class="nav-links">
+        <!-- Espaço para ícones ou botões de ação futuros, se desejar -->
+    </div>
+</div>
+<h1 style="text-align:center; color:#006c5b; font-size:1.8rem; font-weight:600; margin:10px 0 18px 0; letter-spacing:1px;">GERENCIAMENTO DE RAMAIS</h1>
+<div class="search-filters" style="justify-content:center; margin-bottom:24px;">
+    <input type="text" id="nameSearch" placeholder="Buscar por nome">
+    <select id="sectorSearch">
+        <option value="">Selecione o Setor</option>
+    </select>
+    <select id="filtro-unidade">
+        <option value="">Selecione a Unidade</option>
+    </select>
+    <button id="searchButton">Buscar</button>
+</div>
     </nav>
     <div class="container">
         <div class="header">
-            <h1>CADASTRO</h1>
-            <div class="buttons">
-                <button id="addUnitSectorButton">Cadastrar Unidade/Setor</button>
-                <button id="addPersonButton">Adicionar Pessoa</button>
-            </div>
-        </div>
+    <div class="buttons">
+        <button id="addUnitSectorButton">Cadastrar Unidade/Setor</button>
+        <button id="addPersonButton">Adicionar Pessoa</button>
+    </div>
+</div>
         <div class="loading" id="loading" style="display: none;">
             <img src="Infinity@1x-1.0s-200px-200px.svg" alt="Loading..." width="100" height="100">
         </div>
         <div class="lista-pessoas">
-            <h2>LISTA DE PESSOAS CADASTRADAS</h2>
+            <h2>LISTA DE RAMAIS</h2>
             <div id="totalPessoas" style="font-weight: bold; margin-bottom: 20px;">
-                Total de pessoas cadastradas: <span id="quantidadePessoas">0</span>
+                Total de ramais cadastrados: <span id="quantidadePessoas">0</span>
             </div>
             <div class="scrollable"> <!-- Adicionando contêiner com rolagem -->
-                <table>
+                <table class="peopleTable">
                     <thead>
                         <tr>
                             <th>Nome</th>
