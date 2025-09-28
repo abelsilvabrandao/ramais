@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="stylesadmin.css"> 
-    <!-- Usar o mesmo CSS do indexusuario.html -->
+    <link rel="stylesheet" href="stylesusuario.css"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <title>Gestão de Ramais</title>
 <style>
@@ -13,6 +14,13 @@
   align-items: center !important;
   gap: 10px !important;
 }
+
+.navbar-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .person-table-photo {
   width: 38px !important;
   height: 38px !important;
@@ -45,19 +53,29 @@
 </head>
 <body>
     <nav class="navbar">
-        <div class="navbar-content">
+        <div class="navbar-content" style="display: flex; align-items: center; justify-content: space-between;">
     <div class="logo">
         <span style="display: block; cursor: default;">
             <img src="logo-intermartimaOFICIAL2024.png" alt="Logo"/>
         </span>
     </div>
+    <button onclick="window.history.back()" class="btn-back">
+        <i class="fas fa-arrow-left"></i>
+        <span>Voltar</span>
+    </button>
     <div class="nav-links">
         <!-- Espaço para ícones ou botões de ação futuros, se desejar -->
     </div>
 </div>
 <h1 style="text-align:center; color:#006c5b; font-size:1.8rem; font-weight:600; margin:10px 0 18px 0; letter-spacing:1px;">GERENCIAMENTO DE RAMAIS</h1>
 <div class="search-filters" style="justify-content:center; margin-bottom:24px;">
-    <input type="text" id="nameSearch" placeholder="Buscar por nome">
+    <div class="search-input-wrapper" style="position: relative; display: inline-block;">
+    <input type="text" id="nameSearch" placeholder="Buscar por nome" style="padding-right: 52px;">
+    <button id="clearSearchBtn" type="button" title="Limpar busca" style="position: absolute; right: 28px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; display: none; padding: 0;">
+        <i class="fas fa-times" style="color: #888; font-size: 1.1em;"></i>
+    </button>
+    <i class="fas fa-search search-icon" style="position: absolute; right: 6px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 1.1em;"></i>
+</div>
     <select id="sectorSearch">
         <option value="">Selecione o Setor</option>
     </select>
@@ -101,90 +119,139 @@
     </div>
     <!-- Modais -->
     <div id="manageUnitSectorModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Gerenciar Unidades e Setores</h2>
-            </div>
-            <div class="form-container">
-                <div>
-                    <h3>Cadastrar/Editar Unidade</h3>
-                    <input type="hidden" id="editUnitIndex">
-                    <input type="text" id="unitName" placeholder="Nome da Unidade" required>
-                    <input type="text" id="unitCnpj" placeholder="CNPJ da Unidade" maxlength="18" required>
-                    <button id="saveUnitButton">Cadastrar</button>
-                    <button id="closeManageUnitSectorModal" class="close-button">Sair</button>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Gerenciar Unidades e Setores</h2>
+        </div>
+        <div class="form-container">
+            <div style="margin-bottom: 24px;">
+                <h3>Cadastrar/Editar Unidade</h3>
+                <input type="hidden" id="editUnitIndex">
+                <div style="display: flex; gap: 12px; margin-bottom: 10px;">
+                    <input type="text" id="unitName" placeholder="Nome da Unidade" class="modal-input">
+                    <input type="text" id="unitCnpj" placeholder="CNPJ da Unidade" maxlength="18" class="modal-input">
                 </div>
-                <div>
-                    <h3>Unidades Cadastradas</h3>
+                <div style="display: flex; gap: 12px; margin-bottom: 10px;">
+                    <button id="saveUnitButton" class="modal-btn primary">Cadastrar</button>
+                    <button id="closeManageUnitSectorModal" class="modal-btn exit">Sair</button>
+                </div>
+            </div>
+            <div style="margin-bottom: 24px;">
+                <h3>Unidades Cadastradas</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Unidade</th>
+                            <th>CNPJ</th>
+                            <th class="actions">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="unitList">
+                        <!-- As unidades cadastradas serão inseridas aqui dinamicamente -->
+                    </tbody>
+                </table>
+            </div>
+            <div style="margin-bottom: 24px;">
+                <h3>Cadastrar/Editar Setor</h3>
+                <input type="hidden" id="editSectorIndex">
+                <div style="display: flex; gap: 12px; margin-bottom: 10px;">
+                    <input type="text" id="sectorName" placeholder="Nome do Setor" class="modal-input">
+                    <select id="selectUnitForSector" class="modal-input">
+                        <option value="">Selecione a Unidade</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 12px; margin-bottom: 10px;">
+                    <button id="saveSectorButton" class="modal-btn primary">Cadastrar</button>
+                </div>
+            </div>
+            <div>
+                <h3>Setores Cadastrados</h3>
+                <div class="scrollable"> <!-- Adicionando um contêiner com rolagem -->
                     <table>
                         <thead>
                             <tr>
+                                <th>Setor</th>
                                 <th>Unidade</th>
-                                <th>CNPJ</th>
                                 <th class="actions">Ações</th>
                             </tr>
                         </thead>
-                        <tbody id="unitList">
-                            <!-- As unidades cadastradas serão inseridas aqui dinamicamente -->
+                        <tbody id="sectorTableBody">
                         </tbody>
                     </table>
                 </div>
-                <div>
-                    <h3>Cadastrar/Editar Setor</h3>
-                    <input type="hidden" id="editSectorIndex">
-                    <input type="text" id="sectorName" placeholder="Nome do Setor">
-                    <select id="selectUnitForSector">
-                        <option value="">Selecione a Unidade</option>
-                    </select>
-                    <button id="saveSectorButton">Cadastrar</button>
-                </div>
-                <div>
-                    <h3>Setores Cadastrados</h3>
-                    <div class="scrollable"> <!-- Adicionando um contêiner com rolagem -->
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Setor</th>
-                                    <th>Unidade</th>
-                                    <th class="actions">Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody id="sectorTableBody">
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
+</div>
+
     <div id="addPersonModal" class="modal">
-        <div class="modal-content">
-            <h2 id="addPersonModalTitle">Adicionar Pessoa</h2>
-            <input type="hidden" id="editIndex">
-            <div class="form-group">
-                <label for="personName">Nome:</label>
-                <input type="text" id="personName" placeholder="Nome">
-            </div>
-            <div class="form-group">
-                <label for="personUnit">Unidade:</label>
-                <select id="personUnit">
-                    <option value="">Selecione a Unidade</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="personSector">Setor:</label>
-                <select id="personSector">
-                    <option value="">Selecione o Setor</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="personExtension">Ramal:</label>
-                <input type="text" id="personExtension" placeholder="Ramal">
-            </div>
-            <button id="savePersonButton">Salvar</button>
-            <button id="closeAddPersonModal" class="close-button">Sair</button>
+    <div class="modal-content">
+        <h2 id="addPersonModalTitle">Adicionar Pessoa</h2>
+        <input type="hidden" id="editIndex">
+        <div class="form-group" style="margin-bottom: 15px;">
+            <label for="personName">Nome:</label>
+            <input type="text" id="personName" placeholder="Nome" class="modal-input">
+        </div>
+        <div class="form-group" style="margin-bottom: 15px;">
+            <label for="personUnit">Unidade:</label>
+            <select id="personUnit" class="modal-input">
+                <option value="">Selecione a Unidade</option>
+            </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 15px;">
+            <label for="personSector">Setor:</label>
+            <select id="personSector" class="modal-input">
+                <option value="">Selecione o Setor</option>
+            </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label for="personExtension">Ramal:</label>
+            <input type="text" id="personExtension" placeholder="Ramal" class="modal-input">
+        </div>
+        <div style="display: flex; gap: 12px; justify-content: flex-start;">
+            <button id="savePersonButton" class="modal-btn primary">Salvar</button>
+            <button id="closeAddPersonModal" class="modal-btn exit">Sair</button>
         </div>
     </div>
+</div>
+
+<style>
+.modal-input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 25px;
+    border: 1px solid #ddd;
+    font-size: 16px;
+    margin-top: 4px;
+    margin-bottom: 0;
+    background: #fff;
+    box-sizing: border-box;
+}
+.modal-btn {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.modal-btn.primary {
+    background-color: #006c5b;
+    color: #fff;
+}
+.modal-btn.primary:hover {
+    background-color: #4CAF50;
+}
+.modal-btn.exit {
+    background-color: #ccc;
+    color: #fff;
+}
+.modal-btn.exit:hover {
+    background-color: #888;
+}
+</style>
+
     <script type="module" src="scriptadmin.js"></script>
 </body>
 </html>

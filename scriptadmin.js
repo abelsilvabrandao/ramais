@@ -644,8 +644,50 @@ window.editPerson = async function(personId) {
     const swalResult = await Swal.fire({
         title: 'Editar Pessoa',
         html: `
-            Nome:<input type="text" id="personNameInput" class="swal2-input" placeholder="Nome" value="${person.name}"><p>
-            Unidade:<select id="personUnitInput" class="swal2-input">
+        <style>
+        .swal2-input, .swal2-select {
+            width: 100% !important;
+            max-width: 350px !important;
+            padding: 10px !important;
+            border-radius: 25px !important;
+            border: 1px solid #ddd !important;
+            font-size: 16px !important;
+            margin-top: 4px !important;
+            margin-bottom: 16px !important;
+            background: #fff !important;
+            box-sizing: border-box !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+        }
+        .swal2-actions button.swal2-confirm {
+            background-color: #006c5b !important;
+            color: #fff !important;
+            border-radius: 25px !important;
+            font-size: 16px !important;
+            font-weight: 600 !important;
+            padding: 10px 24px !important;
+            margin-right: 8px !important;
+        }
+        .swal2-actions button.swal2-cancel {
+            background-color: #ccc !important;
+            color: #fff !important;
+            border-radius: 25px !important;
+            font-size: 16px !important;
+            font-weight: 600 !important;
+            padding: 10px 24px !important;
+        }
+        .swal2-actions button.swal2-confirm:hover {
+            background-color: #4CAF50 !important;
+        }
+        .swal2-actions button.swal2-cancel:hover {
+            background-color: #888 !important;
+        }
+        </style>
+        <div style="display: flex; flex-direction: column; gap: 0;">
+            <label style="text-align:left; margin-bottom:2px;">Nome:</label>
+            <input type="text" id="personNameInput" class="swal2-input" placeholder="Nome" value="${person.name}">
+            <label style="text-align:left; margin-bottom:2px;">Unidade:</label>
+            <select id="personUnitInput" class="swal2-select">
                 <option value="">Selecione a Unidade</option>
                 ${units.map(unit => `<option value="${unit.name}" ${unit.name === person.unit ? 'selected' : ''}>${unit.name}</option>`).join('')}
             </select><p>
@@ -739,7 +781,35 @@ function filterList() {
     });
 
     renderFilteredPeopleList(filteredPeople);
+
+    // Mostra ou esconde o botão X conforme o input
+    const clearBtn = document.getElementById('clearSearchBtn');
+    if (document.getElementById('nameSearch').value.length > 0 || sectorSearch || unitSearch) {
+        clearBtn.style.display = 'block';
+    } else {
+        clearBtn.style.display = 'none';
+    }
 }
+
+// Evento para limpar busca e filtros
+document.addEventListener('DOMContentLoaded', function() {
+    const nameInput = document.getElementById('nameSearch');
+    const sectorSelect = document.getElementById('sectorSearch');
+    const unitSelect = document.getElementById('filtro-unidade');
+    const clearBtn = document.getElementById('clearSearchBtn');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+            nameInput.value = '';
+            sectorSelect.value = '';
+            unitSelect.value = '';
+            filterList();
+        });
+        // Mostra/esconde o botão X ao digitar
+        nameInput.addEventListener('input', filterList);
+        sectorSelect.addEventListener('change', filterList);
+        unitSelect.addEventListener('change', filterList);
+    }
+});
 
 // Função para renderizar a lista filtrada de pessoas
 function renderFilteredPeopleList(filteredPeople) {
