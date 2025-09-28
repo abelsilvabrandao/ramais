@@ -460,7 +460,7 @@ window.applyFilters = function() {
     const unitFilter = document.getElementById('filterUnit').value;
 
     const filteredPeople = people.filter(person => {
-        const matchesName = person.name.toLowerCase().includes(nameFilter);
+        const matchesName = (person.name || '').toLowerCase().includes(nameFilter);
         const matchesUnit = !unitFilter || person.unit === unitFilter;
 
         return matchesName && matchesUnit;
@@ -475,7 +475,11 @@ window.applyFilters = function() {
         ramaisContainer.innerHTML = ''; // Garante que o container está vazio
         const noResults = document.createElement('div');
         noResults.className = 'no-results';
-        noResults.innerHTML = '<i class="fas fa-exclamation-circle error-icon"></i> Nenhum resultado encontrado';
+        noResults.innerHTML = `
+          <div style="font-size:2.5em;margin-bottom:8px;">🔎</div>
+          <div style="font-weight:600;font-size:1.12em;color:#006c5b;margin-bottom:2px;">Nenhum resultado encontrado</div>
+          <div style="color:#666;font-size:0.97em;">Tente digitar outro nome.<br>Verifique se digitou corretamente.</div>
+        `;
         ramaisContainer.appendChild(noResults);
     }
 };

@@ -104,19 +104,44 @@
             box-sizing: border-box;
         }
         
-        .search-box input[type="text"] {
-            width: 100%;
-            max-width: 100%;
-            box-sizing: border-box;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 16px;
-            margin-bottom: 15px;
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
-        }
+        .search-box {
+    position: relative;
+}
+.search-box input[type="text"] {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 10px 38px 10px 14px;
+    border: 1.5px solid #006c5b;
+    border-radius: 25px;
+    font-size: 16px;
+    margin-bottom: 15px;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background: #fff;
+}
+.search-box input[type="text"]::placeholder {
+    color: #8bb7af;
+    opacity: 1;
+}
+.search-box::after {
+    content: '\f002';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    position: absolute;
+    right: 18px;
+    top: 65%;
+    transform: translateY(-50%);
+    font-size: 18px;
+    color: #006c5b;
+    pointer-events: none;
+}
+@media (max-width: 768px) {
+    .search-box::after { top: 37px; right: 14px; font-size: 16px; }
+    .search-box input[type="text"] { padding-right: 32px; }
+}
+
         
         .user-info {
             margin: 20px 0;
@@ -246,5 +271,11 @@
         }
     </style>
     <script type="module" src="editar-foto.js"></script>
+<footer class="main-footer">
+  <div class="footer-content">
+    <div>© 2025 Intermarítima. Todos os direitos reservados.</div>
+    <div>Desenvolvido por <strong>Abel Silva Brandão</strong> | Versão 1.0.0</div>
+  </div>
+</footer>
 </body>
 </html>

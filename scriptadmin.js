@@ -774,7 +774,7 @@ function filterList() {
     const unitSearch = document.getElementById('filtro-unidade').value; // Certifique-se que o ID está correto
     const filteredPeople = people.filter(person => {
         return (
-            (person.name.toLowerCase().includes(nameSearch)) &&
+            ((person.name || '').toLowerCase().includes(nameSearch)) &&
             (sectorSearch === '' || person.sector === sectorSearch) &&
             (unitSearch === '' || person.unit === unitSearch)
         );

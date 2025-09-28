@@ -175,15 +175,17 @@ async function searchPeople(searchTerm) {
 // Função para exibir resultados da busca
 function displaySearchResults(results) {
     searchResults.innerHTML = '';
-    
-    if (results.length === 0) {
+    if (!results || results.length === 0) {
         const noResults = document.createElement('div');
-        noResults.textContent = 'Nenhum resultado encontrado';
         noResults.className = 'no-results';
+        noResults.innerHTML = `
+          <div style="font-size:2.5em;margin-bottom:8px;">🔎</div>
+          <div style="font-weight:600;font-size:1.12em;color:#006c5b;margin-bottom:2px;">Nenhum resultado encontrado</div>
+          <div style="color:#666;font-size:0.97em;">Tente digitar outro nome ou número de ramal.<br>Verifique se digitou corretamente.</div>
+        `;
         searchResults.appendChild(noResults);
         return;
     }
-    
     // Agrupar por unidade e setor
     const resultsByUnitSector = {};
     results.forEach(person => {

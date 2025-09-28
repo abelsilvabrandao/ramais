@@ -40,31 +40,56 @@
             });
         }
         
-        // Show install prompt for PWA
+        // Show install prompt for PWA (custom modal)
         let deferredPrompt;
         window.addEventListener('beforeinstallprompt', (e) => {
-            // Prevent Chrome 67 and earlier from automatically showing the prompt
             e.preventDefault();
-            // Stash the event so it can be triggered later
             deferredPrompt = e;
-            
-            // Show custom install button or prompt
-            setTimeout(() => {
-                if (confirm('Deseja instalar o aplicativo Ramais em sua tela inicial?')) {
-                    // Show the install prompt
-                    deferredPrompt.prompt();
-                    // Wait for the user to respond to the prompt
-                    deferredPrompt.userChoice.then((choiceResult) => {
-                        if (choiceResult.outcome === 'accepted') {
-                            console.log('User accepted the install prompt');
-                        } else {
-                            console.log('User dismissed the install prompt');
-                        }
-                        deferredPrompt = null;
-                    });
-                }
-            }, 3000); // Show prompt after 3 seconds
+            if (!localStorage.getItem('pwaPromptShown')) {
+                setTimeout(() => {
+                    showPWAModal();
+                    localStorage.setItem('pwaPromptShown', 'yes');
+                }, 1200);
+            }
         });
+        function showPWAModal() {
+            const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+            const isAndroid = /android/i.test(navigator.userAgent);
+            let html = '';
+            if (isIOS) {
+                html = `
+                <div style='text-align:center;'>
+                  <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/apple.svg" alt="iPhone" width="48" style="margin-bottom:10px;">
+                  <div style="font-size:1.1em; margin-bottom:8px;">Adicione à tela inicial no iPhone:</div>
+                  <img src="https://user-images.githubusercontent.com/674621/164895796-5c1b7b2c-5b2e-4f9d-8f7e-5e7b4f6b8b7e.gif" alt="Como adicionar no iOS" style="max-width:220px;border-radius:10px;box-shadow:0 2px 8px #0001"><br>
+                  <div style="margin-top:10px;">Toque em <span style='background:#eee;padding:2px 7px;border-radius:6px;'>Compartilhar</span> e depois <b>'Tela de Início'</b></div>
+                </div>`;
+            } else if (isAndroid) {
+                html = `
+                <div style='text-align:center;'>
+                  <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/android.svg" alt="Android" width="48" style="margin-bottom:10px;">
+                  <div style="font-size:1.1em; margin-bottom:8px;">Adicione à tela inicial no Android:</div>
+                  <img src="https://user-images.githubusercontent.com/674621/164895807-6e0b1c1b-2b02-4c1d-9f3b-8b7e7a5a2e3d.gif" alt="Como adicionar no Android" style="max-width:220px;border-radius:10px;box-shadow:0 2px 8px #0001"><br>
+                  <div style="margin-top:10px;">Toque em <span style='background:#eee;padding:2px 7px;border-radius:6px;'>Adicionar à tela inicial</span> no menu do navegador</div>
+                </div>`;
+            } else {
+                html = `<div style='text-align:center;'>Você pode instalar este app como PWA pelo menu do navegador.</div>`;
+            }
+            Swal.fire({
+                title: 'Instale o iRAMAIS na sua tela inicial!',
+                html,
+                confirmButtonText: isAndroid ? 'Instalar agora' : 'Ok',
+                showCancelButton: !isIOS,
+                cancelButtonText: 'Agora não',
+                customClass: { popup: 'swal2-pwa-modal' },
+                willClose: () => {},
+            }).then((result) => {
+                if (result.isConfirmed && deferredPrompt) {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
+                }
+            });
+        }
     </script>
 </head>
 <body>
@@ -121,40 +146,195 @@
         function redirectToLogin() {
             // Abre o modal de login com SweetAlert
             Swal.fire({
-                title: 'Admin Ramais',
-                html: `
-                    <input type="text" id="username" class="swal2-input" placeholder="Usuário">
-                    <input type="password" id="password" class="swal2-input" placeholder="Senha">
-                `,
-                confirmButtonText: 'Entrar',
-                focusConfirm: false,
-                preConfirm: () => {
-                    const username = Swal.getPopup().querySelector('#username').value;
-                    const password = Swal.getPopup().querySelector('#password').value;
-                    
-                    // Aqui você pode adicionar a lógica de validação de usuário
-                    if (!username || !password) {
-                        Swal.showValidationMessage(`Por favor, preencha os campos`);
-                        return false;
-                    }
-    
-                    // Exemplo de validação básica (substitua pela lógica real de autenticação)
-                    if (username === 'admin' && password === 'COPEmatt001') {
-                        return { username, password };
-                    } else {
-                        Swal.showValidationMessage(`Usuário ou senha incorretos`);
-                        return false;
-                    }
-                }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Redireciona para a página de administração se o login for bem-sucedido
-                    window.location.href = "admin.html"; // Substitua pelo URL da página de administração
+    title: '<span style="color:#222;font-weight:600;font-size:2rem;letter-spacing:1px;">Admin Ramais</span>',
+    html: `
+    <div style="display:flex;flex-direction:column;align-items:center;gap:22px;margin-top:10px;">
+        <input type="text" id="username" class="swal2-input login-input-align" placeholder="Usuário" autocomplete="username">
+        <div style="position:relative;width:100%;max-width:420px;">
+            <input type="password" id="password" class="swal2-input login-input-align" placeholder="Senha" autocomplete="current-password" style="padding-right:44px;">
+            <button type="button" id="togglePassword" tabindex="-1" style="position:absolute;right:16px;top:50%;transform:translateY(-50%);background:none;border:none;outline:none;cursor:pointer;font-size:1.2em;color:#006c5b;z-index:2;">
+                <i class="fa fa-eye" id="eyeIcon"></i>
+            </button>
+        </div>
+    </div>
+`, 
+    showCancelButton: true,
+    cancelButtonText: '<span style="color:#006c5b;font-weight:500;">Cancelar</span>',
+    confirmButtonText: '<span style="padding:0 22px;">Entrar</span>',
+    customClass: {
+        popup: 'swal2-login-modal',
+        confirmButton: 'swal2-login-confirm',
+        cancelButton: 'swal2-login-cancel'
+    },
+    buttonsStyling: false,
+    focusConfirm: false,
+    didOpen: () => {
+        const passwordInput = Swal.getPopup().querySelector('#password');
+        const usernameInput = Swal.getPopup().querySelector('#username');
+        const togglePassword = Swal.getPopup().querySelector('#togglePassword');
+        const eyeIcon = Swal.getPopup().querySelector('#eyeIcon');
+        // Remover inputs fantasmas do SweetAlert2
+        Array.from(Swal.getPopup().querySelectorAll('.swal2-input')).forEach(input => {
+            if (input.id !== 'username' && input.id !== 'password') {
+                input.parentNode.removeChild(input);
+            }
+        });
+        togglePassword.addEventListener('click', () => {
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeIcon.classList.remove('fa-eye');
+                eyeIcon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                eyeIcon.classList.remove('fa-eye-slash');
+                eyeIcon.classList.add('fa-eye');
+            }
+        });
+        [usernameInput, passwordInput].forEach(el => {
+            el.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    Swal.clickConfirm();
                 }
             });
+        });
+    },
+    preConfirm: () => {
+        const username = Swal.getPopup().querySelector('#username').value;
+        const password = Swal.getPopup().querySelector('#password').value;
+        if (!username || !password) {
+            Swal.showValidationMessage(`<span style='color:#c00;font-weight:500;'>Por favor, preencha os campos</span>`);
+            return false;
+        }
+        if (username === 'admin' && password === 'COPEmatt001') {
+            return { username, password };
+        } else {
+            Swal.showValidationMessage(`<span style='color:#c00;font-weight:500;'>Usuário ou senha incorretos</span>`);
+            return false;
+        }
+    }
+}).then((result) => {
+    if (result.isConfirmed) {
+        window.location.href = "admin.html";
+    }
+});
+
+// Estilos customizados para o modal de login
+const loginModalStyle = document.createElement('style');
+loginModalStyle.innerHTML = `
+.swal2-login-modal {
+    border-radius: 18px !important;
+    padding: 0 !important;
+    box-shadow: 0 6px 32px 0 #006c5b22 !important;
+}
+.swal2-login-confirm {
+    background: #006c5b !important;
+    color: #fff !important;
+    border-radius: 12px !important;
+    font-size: 1.1rem !important;
+    font-weight: 600 !important;
+    border: none !important;
+    box-shadow: 0 2px 8px #006c5b22 !important;
+    padding: 12px 32px !important;
+    margin-left: 22px !important;
+    margin-right: 0 !important;
+    margin-bottom: 0 !important;
+    transition: background 0.2s;
+}
+.swal2-login-confirm:hover {
+    background: #00937e !important;
+}
+.swal2-login-cancel {
+    background: #f4f4f4 !important;
+    color: #006c5b !important;
+    border-radius: 12px !important;
+    font-size: 1.05rem !important;
+    font-weight: 500 !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 12px 32px !important;
+    margin-right: 22px !important;
+    margin-left: 0 !important;
+    margin-bottom: 0 !important;
+    transition: background 0.2s;
+}
+.swal2-actions {
+    margin-top: 26px !important;
+    gap: 26px !important;
+    justify-content: center !important;
+}
+.swal2-login-modal .swal2-actions {
+    margin-bottom: 18px !important;
+}
+.swal2-login-modal .swal2-html-container {
+    margin-bottom: 26px !important;
+}
+.swal2-login-cancel:hover {
+    background: #e6f7f4 !important;
+}
+.swal2-input, .login-input-align {
+    border-radius: 18px !important;
+    border: 1.5px solid #006c5b !important;
+    font-size: 1.09rem !important;
+    font-family: inherit;
+    color: #222 !important;
+    background: #f9f9f9 !important;
+    box-shadow: none !important;
+    width: 100% !important;
+    max-width: 420px !important;
+    margin: 0 auto 0 auto !important;
+    display: block !important;
+    text-align: left !important;
+}
+.swal2-login-modal .swal2-html-container > div {
+    width: 100% !important;
+    max-width: 420px !important;
+    margin: 0 auto !important;
+}
+.swal2-login-modal .swal2-html-container {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+}
+
+`;
+document.head.appendChild(loginModalStyle);
+
         }
     </script>
 <button id="btnScrollTop" class="scroll-top-btn" title="Voltar ao topo" style="display:none;"><i class="fas fa-arrow-up"></i></button>
+<style>
+.scroll-top-btn {
+  position: fixed;
+  right: 24px;
+  bottom: 90px;
+  z-index: 1100;
+  background: #006c5b;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  font-size: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .2s;
+}
+.scroll-top-btn:hover {
+  background: #4CAF50;
+}
+@media (max-width: 600px) {
+  .scroll-top-btn { right: 12px; bottom: 90px; width: 42px; height: 42px; font-size: 1.2rem; }
+}
+</style>
+<footer class="main-footer">
+  <div class="footer-content">
+    <div>© 2025 Intermarítima. Todos os direitos reservados.</div>
+    <div>Desenvolvido por <strong>Abel Silva Brandão</strong> | Versão 1.0.0</div>
+  </div>
+</footer>
 </body>
 </html>
 
