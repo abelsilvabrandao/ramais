@@ -20,6 +20,32 @@ const db = getFirestore(app);
 // Variáveis globais
 let people = [];
 
+// Atualização em tempo real dos status dos usuários
+onSnapshot(collection(db, 'people'), (snapshot) => {
+    snapshot.docChanges().forEach(change => {
+        const data = change.doc.data();
+        const id = change.doc.id;
+        // Atualiza badge/status na tela se o card estiver visível
+        const cards = document.querySelectorAll('.person-card');
+        cards.forEach(card => {
+            const nameEl = card.querySelector('.person-name');
+            const extEl = card.querySelector('.extension');
+            if (nameEl && extEl) {
+                const matchNome = (nameEl.textContent||'').trim().toLowerCase() === (data.name||'').trim().toLowerCase();
+                const matchRamal = (extEl.textContent||'').replace(/\D/g,'') === String(data.extension||'').replace(/\D/g,'');
+                if (matchNome || matchRamal) {
+                    const badge = card.querySelector('.status-badge');
+                    if (badge) {
+                        badge.className = `status-badge status-${data.status||'available'}`;
+                        const statusNames = {available:'Disponível',busy:'Ocupado',meeting:'Em reunião',lunch:'Almoço',away:'Ausente',vacation:'Férias'};
+                        badge.innerHTML = `<div class='status-dot'></div><span class='status-text'>${statusNames[data.status||'available']||data.status||'Indefinido'}</span>`;
+                    }
+                }
+            }
+        });
+    });
+});
+
 // Função para buscar pessoas do Firestore
 async function fetchPeople() {
     try {

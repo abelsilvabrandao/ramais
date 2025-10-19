@@ -22,6 +22,7 @@
     <link rel="icon" type="image/png" sizes="192x192" href="icons/android/android-launchericon-192-192.png">
     <link rel="apple-touch-icon" sizes="180x180" href="icons/ios/180.png">
     <link rel="stylesheet" href="stylesusuario.css">
+<link rel="stylesheet" href="cards-mobile-fix.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -95,20 +96,38 @@
 <body>
     <nav class="navbar">
         <div class="navbar-content">
-            <div class="logo">
-                <span style="display: block; cursor: default;">
-    <img src="logo-intermartimaOFICIAL2024.png" alt="Logo"/>
-</span>
-            </div>
-            <div class="nav-links">
-                <a href="editar-foto.html" class="update-ramal-icon" title="Atualização Ramal">
-  <img src="atualizacaoramal.png" alt="Atualização Ramal" />
-</a>
-                <div class="login-icon">
-                    <img src="admin.png" alt="Login" onclick="redirectToLogin()" title="Acessar Gerenciamento"/>
+            <div class="logo-center-wrapper">
+                <div class="logo">
+                    <span style="display: block; cursor: default;">
+                        <img src="logo-intermartimaOFICIAL2024.png" alt="Logo"/>
+                    </span>
                 </div>
             </div>
-            <!-- Ícone de login -->
+            <div class="nav-menu-wrapper">
+                <button id="menu-toggle" class="menu-toggle" aria-label="Abrir menu">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div id="menu-dropdown" class="menu-dropdown">
+                    <a href="editar-foto.html" class="update-ramal-icon" title="Atualização Ramal">
+                        <img src="atualizacaoramal.png" alt="Atualização Ramal" />
+                        <span>Estilizar Ramal</span>
+                    </a>
+                    <button class="login-icon" onclick="redirectToLogin()" title="Acessar Gerenciamento">
+                        <img src="admin.png" alt="Login" />
+                        <span>Admin</span>
+                    </button>
+                    <!-- Botões de status podem ser adicionados aqui -->
+                    <div class="status-options-menu">
+                        <!-- Exemplo de botões de status -->
+                        <button class="status-option" data-status="available"><span class="status-emoji">🟢</span>Disponível</button>
+                        <button class="status-option" data-status="busy"><span class="status-emoji">🟠</span>Ocupado</button>
+                        <button class="status-option" data-status="meeting"><span class="status-emoji">🔴</span>Em reunião</button>
+                        <button class="status-option" data-status="lunch"><span class="status-emoji">🍽️</span>Almoço</button>
+                        <button class="status-option" data-status="away"><span class="status-emoji">⏰</span>Ausente</button>
+                        <button class="status-option" data-status="vacation"><span class="status-emoji">🏖️</span>Férias</button>
+                    </div>
+                </div>
+            </div>
         </div>
         <h1>iRamais</h1>
         <div class="search-filters">
@@ -142,6 +161,133 @@
     </div>
 
     <script type="module" src="scriptusuario_clean.js"></script>
+<script type="module">
+import { getFirestore, collection, query, where, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+const firebaseConfig = {
+    apiKey: "AIzaSyDa_qvmvyVyJVe936hW5QoDtviIrITcvDI",
+    authDomain: "ramais-63a73.firebaseapp.com",
+    projectId: "ramais-63a73",
+    storageBucket: "ramais-63a73.appspot.com",
+    messagingSenderId: "695161860787",
+    appId: "1:695161860787:web:98e73e5fc79a5cbb2f76c6",
+    measurementId: "G-X3121MPE65"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+function getStatusName(status) {
+    return {
+        available: 'Disponível',
+        busy: 'Ocupado',
+        meeting: 'Em reunião',
+        lunch: 'Almoço',
+        away: 'Ausente',
+        vacation: 'Férias'
+    }[status] || status;
+}
+
+async function buscarPessoaPorRamal(ramal) {
+    const q = query(collection(db, 'people'), where('extension', '==', ramal));
+    const snap = await getDocs(q);
+    if (snap.empty) return null;
+    return {id: snap.docs[0].id, ...snap.docs[0].data()};
+}
+
+async function atualizarStatusPessoa(id, novoStatus) {
+    const ref = doc(db, 'people', id);
+    await updateDoc(ref, { status: novoStatus, updatedAt: new Date().toISOString() });
+}
+
+document.querySelectorAll('.menu-dropdown .status-option').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const novoStatus = btn.getAttribute('data-status');
+        const { value: ramal } = await Swal.fire({
+            title: 'Qual ramal deseja alterar?',
+            input: 'text',
+            inputLabel: 'Digite o número do ramal',
+            inputPlaceholder: 'Ex: 1234',
+            showCancelButton: true,
+            confirmButtonText: 'Buscar',
+            cancelButtonText: 'Cancelar',
+            inputValidator: (v) => !v ? 'Digite o ramal' : undefined
+        });
+        if (!ramal) return;
+        Swal.showLoading();
+        try {
+            const pessoa = await buscarPessoaPorRamal(ramal);
+            if (!pessoa) {
+                Swal.fire('Não encontrado', 'Nenhum usuário com esse ramal.', 'warning');
+                return;
+            }
+            const statusAtualNome = getStatusName(pessoa.status || 'available');
+            const nome = pessoa.name || '(Sem nome)';
+            const getInitials = name => (name||'').split(' ').map(p=>p[0]).join('').toUpperCase().substring(0,2);
+const statusColors = {
+  available: '#2ecc71', busy: '#e74c3c', meeting: '#3498db', lunch: '#f39c12', away: '#7f8c8d', vacation: '#9b59b6'
+};
+let avatarHtml = '';
+const statusDot = `<span style='display:inline-block;width:16px;height:16px;border-radius:50%;background:${statusColors[pessoa.status||'available']};margin-right:8px;border:2px solid #fff;box-shadow:0 1px 4px #0001;vertical-align:middle;'></span>`;
+if(pessoa.photoBase64){
+  avatarHtml = `<div style='display:flex;align-items:center;justify-content:center;margin-bottom:8px;'>${statusDot}<img src='${pessoa.photoBase64}' alt='Foto' style='width:48px;height:48px;border-radius:50%;box-shadow:0 2px 8px #0001;'></div>`;
+}else if(pessoa.photoUrl){
+  avatarHtml = `<div style='display:flex;align-items:center;justify-content:center;margin-bottom:8px;'>${statusDot}<img src='${pessoa.photoUrl}' alt='Foto' style='width:48px;height:48px;border-radius:50%;box-shadow:0 2px 8px #0001;'></div>`;
+}else{
+  const initials = getInitials(pessoa.name);
+  avatarHtml = `<div style='display:flex;align-items:center;justify-content:center;margin-bottom:8px;'>${statusDot}<div style='width:48px;height:48px;border-radius:50%;background:#e1e8ed;display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:bold;color:#006c5b;box-shadow:0 2px 8px #0001;'>${initials}</div></div>`;
+}
+const confirm = await Swal.fire({
+                title: 'Confirmar alteração?',
+                html: `${avatarHtml}<b>${nome}</b><br>Ramal: <b>${ramal}</b><br>Status atual: <b>${statusAtualNome}</b><br>Trocar para: <b>${getStatusName(novoStatus)}</b>`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sim, trocar',
+                cancelButtonText: 'Cancelar'
+            });
+            if (confirm.isConfirmed) {
+                await atualizarStatusPessoa(pessoa.id, novoStatus);
+                Swal.fire('Sucesso', 'Status atualizado!', 'success');
+                // Atualizar badge/status na tela imediatamente
+                const cards = document.querySelectorAll('.person-card');
+                cards.forEach(card => {
+                  const nameEl = card.querySelector('.person-name');
+                  const extEl = card.querySelector('.extension');
+                  if (nameEl && extEl) {
+                    const matchNome = (nameEl.textContent||'').trim().toLowerCase() === (pessoa.name||'').trim().toLowerCase();
+                    const matchRamal = (extEl.textContent||'').replace(/\D/g,'') === String(ramal).replace(/\D/g,'');
+                    if (matchNome || matchRamal) {
+                      const badge = card.querySelector('.status-badge');
+                      if (badge) {
+                        badge.className = `status-badge status-${novoStatus}`;
+                        const statusNames = {available:'Disponível',busy:'Ocupado',meeting:'Em reunião',lunch:'Almoço',away:'Ausente',vacation:'Férias'};
+                        badge.innerHTML = `<div class='status-dot'></div><span class='status-text'>${statusNames[novoStatus]||novoStatus}</span>`;
+                      }
+                    }
+                  }
+                });
+            }
+        } catch (err) {
+            Swal.fire('Erro', 'Ocorreu um erro ao atualizar o status.', 'error');
+        }
+    });
+});
+</script>
+<script>
+const menuToggle = document.getElementById('menu-toggle');
+const menuDropdown = document.getElementById('menu-dropdown');
+if (menuToggle && menuDropdown) {
+  menuToggle.addEventListener('click', function(e) {
+    e.stopPropagation();
+    menuDropdown.classList.toggle('show');
+  });
+  document.addEventListener('click', function(e) {
+    if (!menuDropdown.contains(e.target) && !menuToggle.contains(e.target)) {
+      menuDropdown.classList.remove('show');
+    }
+  });
+}
+</script>
     <script>
         function redirectToLogin() {
             // Abre o modal de login com SweetAlert
