@@ -1232,10 +1232,24 @@ min-width: 0;
 .main-footer {
     position: fixed;
     left: 0;
+    right: 0;
     bottom: 0;
     width: 100vw;
     z-index: 1000;
+    background: #fff;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+    padding: 0;
+    margin: 0;
 }
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+.container {
+    flex: 1 0 auto;
+}
+
 .container {
     padding-top: 230px;
     padding-bottom: 70px;
