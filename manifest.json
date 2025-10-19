@@ -1,6 +1,6 @@
 {
-  "name": "iRAMAIS",
-  "short_name": "iRAMAIS",
+  "name": "iRamais",
+  "short_name": "iRamais",
   "description": "Sistema de consulta de ramais da Intermarítima",
   "start_url": "/",
   "display": "standalone",
