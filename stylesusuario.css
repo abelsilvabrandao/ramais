@@ -1211,7 +1211,11 @@ th {
 .navbar {
     background: #fff;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    position: sticky;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 2500;
     top: 0;
     z-index: 1000;
     padding-bottom: 12px;
@@ -1519,6 +1523,11 @@ th {
   background: #006c5b;
   color: #fff;
   text-align: center;
+  position: fixed !important;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2000;
   padding: 10px 0 6px 0;
   font-size: 0.98rem;
   box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
