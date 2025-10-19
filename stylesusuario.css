@@ -427,6 +427,22 @@ button:hover {
 }
 
 /* Estilos para os cabeçalhos da tabela */
+
+@media (max-width: 600px) {
+  .ramais-container .people-cards {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    padding: 8px !important;
+  }
+  .person-card {
+    min-width: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+  }
+}
+
 th {
     background-color: #006c5b; /* Cor verde */
     color: white;
@@ -1232,24 +1248,16 @@ min-width: 0;
 .main-footer {
     position: fixed;
     left: 0;
-    right: 0;
     bottom: 0;
     width: 100vw;
-    z-index: 1000;
+    pointer-events: auto;
+    z-index: 2000;
     background: #fff;
-    box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
-    padding: 0;
-    margin: 0;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
 }
 body {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
+    padding-bottom: 80px !important;
 }
-.container {
-    flex: 1 0 auto;
-}
-
 .container {
     padding-top: 230px;
     padding-bottom: 70px;
