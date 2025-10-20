@@ -61,9 +61,12 @@
                 <div style='text-align:center;'>
                   <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/apple.svg" alt="iPhone" width="48" style="margin-bottom:10px;">
                   <div style="font-size:1.1em; margin-bottom:8px;">Adicione à tela inicial no iPhone:</div>
-                  <img src="https://user-images.githubusercontent.com/674621/164895796-5c1b7b2c-5b2e-4f9d-8f7e-5e7b4f6b8b7e.gif" alt="Como adicionar no iOS" style="max-width:220px;border-radius:10px;box-shadow:0 2px 8px #0001"><br>
-                  <div style="margin-top:10px;">Toque em <span style='background:#eee;padding:2px 7px;border-radius:6px;'>Compartilhar</span> e depois <b>'Tela de Início'</b></div>
-                </div>`;
+                  <div style="margin-bottom:8px;font-size:1.08em;">Toque no botão <b>Compartilhar</b> e depois <b>Adicionar à Tela de Início</b></div>
+                </div>
+                  <img src="atutorialaple.png" alt="Como adicionar no iOS" style="max-width:220px;border-radius:10px;box-shadow:0 2px 8px #0001"><br>
+                  <div style="margin-top:10px;">
+  </span>
+</div>`;
             } else if (isAndroid) {
                 html = `
                 <div style='text-align:center;'>
@@ -76,7 +79,7 @@
                 html = `<div style='text-align:center;'>Você pode instalar este app como PWA pelo menu do navegador.</div>`;
             }
             Swal.fire({
-                title: 'Instale o iRAMAIS na sua tela inicial!',
+                title: 'Instale o iRamais na sua tela inicial!',
                 html,
                 confirmButtonText: isAndroid ? 'Instalar agora' : 'Ok',
                 showCancelButton: !isIOS,

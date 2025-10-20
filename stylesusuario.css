@@ -31,11 +31,6 @@
     color: #005a4d;
 }
 
-h1 {
-    text-align: center;
-    margin-left: auto;
-    margin-right: auto;
-}
 .search-filters {
     display: flex;
     flex-direction: column;
@@ -119,23 +114,21 @@ h1 {
     transition: opacity 0.2s, transform 0.2s;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 600px) {
   .clear-button {
-    right: 12px !important; /* Exatamente alinhado com a lupa */
-    left: auto !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-    z-index: 10 !important;
+    right: 50px !important; /* ou ajuste para 28px, 24px, etc. conforme visual */
+    top: 50%;
+    transform: translateY(-50%);
+    position: absolute;
+    z-index: 10;
   }
-  .search-container input[type="text"]::placeholder {
-    text-align: left !important;
+  .search-icon {
+    right: 12px;
+  }
+  .search-container input[type="text"] {
+    padding-right: 80px; /* garantir espaço para ambos */
   }
 }
-
-.search-container input[type="text"] {
-    padding-right: 72px; /* Espaço extra para x e lupa */
-}
-
 
 .search-icon {
     position: absolute;
@@ -233,18 +226,20 @@ body {
 
 h1 {
     text-align: center;
-    margin: 10px 0 18px 0;
+    margin: 6px 0 10px 0 !important;
     color: #006c5b;
-    font-size: 1.8rem;
+    font-size: 2.3rem !important;
     font-weight: 600;
     width: 100%;
-    padding: 0 20px;
+    padding: 0 10px !important;
     order: -1;
     display: flex;
     align-items: center;
     justify-content: center;
     letter-spacing: 1px;
 }
+
+
 
 .container {
     max-width: 1200px;
@@ -586,6 +581,30 @@ th {
     border-color: #006c5b;
     box-shadow: 0 2px 10px rgba(0, 108, 91, 0.1);
     outline: none;
+}
+
+/* Estilos customizados para o modal de login */
+
+.swal2-pwa-modal {
+  background: rgba(255,255,255,0.72) !important;
+  backdrop-filter: blur(16px) saturate(160%) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 6px 32px 0 #006c5b22 !important;
+}
+.swal2-pwa-modal .swal2-confirm {
+  background: #006c5b !important;
+  color: #fff !important;
+  border-radius: 12px !important;
+  font-size: 1.1rem !important;
+  font-weight: 600 !important;
+  border: none !important;
+  box-shadow: 0 2px 8px #006c5b22 !important;
+  padding: 12px 32px !important;
+  margin: 0 auto 0 auto !important;
+  transition: background 0.2s;
+}
+.swal2-pwa-modal .swal2-confirm:hover {
+  background: #00937e !important;
 }
 
 /* Estilos para o popup de número completo */
@@ -1725,16 +1744,12 @@ body {
   padding-bottom: 4px !important;
   min-height: 48px;
 }
-h1 {
-  font-size: 1.3rem !important;
-  margin: 6px 0 10px 0 !important;
-  padding: 0 10px !important;
-}
+
 @media (max-width: 600px) {
   .main-footer { font-size: 0.93rem; padding: 7px 0 3px 0; }
   .footer-content { gap: 3px; padding: 0 5px; }
   .navbar { padding-bottom: 2px !important; min-height: 38px; }
-  h1 { font-size: 1.1rem !important; margin: 4px 0 7px 0 !important; }
+  h1 { font-size: 1.8rem !important; margin: 4px 0 7px 0 !important; }
 }
 
 .footer-content {
@@ -1752,10 +1767,7 @@ h1 {
 
 body { padding-bottom: 75px !important; box-sizing: border-box; }
 
-body { padding-bottom: 75px !important; }
 
-@media (max-width: 600px) {
-  .main-footer { font-size: 0.97rem; padding: 15px 4px 10px 4px; }
-  .footer-content { gap: 4px; }
-}
+
+
 
