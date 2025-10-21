@@ -373,9 +373,10 @@ button:hover {
 }
 
 .ramais-container.collapsed .people-cards {
-    max-height: 0;
-    padding: 0 15px;
-    visibility: hidden;
+    display: none !important;
+    max-height: 0 !important;
+    padding: 0 15px !important;
+    visibility: hidden !important;
 }
 
 .ramal-item {
@@ -1219,14 +1220,28 @@ min-width: 0;
 
 /* Loading Styles */
 .loading-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 20px 20px 10px 20px;
     text-align: center;
-    min-height: 120px;
+    background: rgba(0,0,0,0.15);
+    z-index: 3000;
+    min-height: 0;
+    padding: 0;
 }
+@media (max-width: 600px) {
+  .loading-container {
+    height: 100dvh;
+    min-height: 0;
+  }
+}
+
 
 .loading-animation {
     width: 80px;
@@ -1251,11 +1266,196 @@ min-width: 0;
     50% { opacity: 1; }
 }
 
+.comunica-anuncio-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 38px 0 24px 0;
+    width: 100%;
+}
+.comunica-anuncio-card {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    background: #fff;
+    border-radius: 30px;
+    box-shadow: 0 6px 32px rgba(0,108,91,0.13), 0 2px 8px rgba(0,108,91,0.09);
+    padding: 28px 38px 28px 28px;
+    border: 2.5px solid #009e6f;
+    max-width: 620px;
+    width: 100%;
+    transition: box-shadow 0.2s, transform 0.2s, background 0.2s;
+    min-width: 0;
+    position: relative;
+}
+.comunica-anuncio-card:hover {
+    background: #e8f5e9;
+    box-shadow: 0 12px 44px rgba(0,108,91,0.17);
+    transform: translateY(-2px) scale(1.02);
+    border-color: #007652;
+}
+.comunica-anuncio-img {
+    height: 100px;
+    width: 100px;
+    border-radius: 18px;
+    aspect-ratio: 1/1;
+    background: #fff;
+    box-shadow: 0 2px 10px rgba(0,108,91,0.10);
+    object-fit: contain;
+    border: 2px solid #e0e0e0;
+    flex-shrink: 0;
+    padding: 12px;
+    box-sizing: border-box;
+}
+.comunica-anuncio-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+    align-items: center;
+    text-align: center;
+}
+.comunica-anuncio-title {
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: #006c5b;
+    margin: 0 0 2px 0;
+    letter-spacing: 0.5px;
+}
+.comunica-anuncio-msg {
+    font-size: 1.07rem;
+    color: #333;
+    margin: 0 0 10px 0;
+    line-height: 1.5;
+    font-weight: 500;
+}
+.comunica-anuncio-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: #006c5b;
+    color: #fff;
+    font-size: 1.11rem;
+    font-weight: 700;
+    border: none;
+    border-radius: 26px;
+    padding: 14px 34px;
+    text-decoration: none;
+    box-shadow: 0 3px 14px rgba(0,108,91,0.13);
+    transition: background 0.2s, transform 0.2s;
+    margin-top: 14px;
+    cursor: pointer;
+    letter-spacing: 0.2px;
+}
+.comunica-anuncio-btn:hover {
+    background: #004d3a;
+    color: #fff;
+    transform: scale(1.055);
+}
+.comunica-anuncio-btn i {
+    font-size: 1.23em;
+    color: #fff !important;
+    background: none;
+    border-radius: 50%;
+    padding: 0;
+    margin-right: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.comunica-anuncio-btn:hover {
+    background: #128c7e;
+    color: #fff;
+    transform: scale(1.045);
+}
+.comunica-anuncio-btn i {
+    font-size: 1.25em;
+}
+@media (max-width: 700px) {
+    .comunica-anuncio-card {
+        flex-direction: column;
+        align-items: center;
+        gap: 18px;
+        padding: 22px 12px 22px 12px;
+    }
+    .comunica-anuncio-img {
+        height: 90px;
+        width: 90px;
+        margin: 0 auto 8px auto;
+        display: block;
+    }
+    .comunica-anuncio-title {
+        font-size: 1.12rem;
+    }
+    .comunica-anuncio-msg {
+        font-size: 0.99rem;
+    }
+    .comunica-anuncio-btn {
+        font-size: 0.97rem;
+        padding: 10px 18px;
+    }
+}
+
+.comunica-balao-wrapper {
+    display: flex;
+    justify-content: center;
+    margin: 32px 0 20px 0;
+}
+.comunica-balao-link {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    background: #fff;
+    border-radius: 32px;
+    box-shadow: 0 4px 18px rgba(0,108,91,0.11), 0 1.5px 6px rgba(0,108,91,0.06);
+    padding: 14px 36px 14px 18px;
+    text-decoration: none;
+    transition: box-shadow 0.2s, transform 0.2s, background 0.2s;
+    border: 2px solid #009e6f;
+    cursor: pointer;
+    min-width: 0;
+}
+.comunica-balao-link:hover {
+    background: #e8f5e9;
+    box-shadow: 0 8px 32px rgba(0,108,91,0.16);
+    transform: translateY(-2px) scale(1.03);
+    border-color: #007652;
+}
+.comunica-balao-img {
+    height: 52px;
+    width: 52px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,108,91,0.13);
+    object-fit: contain;
+    border: 1.5px solid #e0e0e0;
+}
+.comunica-balao-text {
+    font-size: 1.18rem;
+    font-weight: 600;
+    color: #006c5b;
+    white-space: pre-line;
+    letter-spacing: 0.5px;
+}
+@media (max-width: 600px) {
+    .comunica-balao-link {
+        padding: 10px 12px 10px 8px;
+        gap: 10px;
+    }
+    .comunica-balao-img {
+        height: 38px;
+        width: 38px;
+    }
+    .comunica-balao-text {
+        font-size: 1.01rem;
+    }
+}
+
 /* Estilos para a Navbar */
 .navbar {
     background: #fff;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    position: fixed;
+    position: fixed !important;
     top: 0;
     left: 0;
     width: 100vw;
@@ -1276,18 +1476,14 @@ min-width: 0;
     overflow: hidden;
 }
 body {
-    padding-bottom: 90px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
     box-sizing: border-box;
 }
+
 .container {
-    padding-bottom: 90px !important;
-}
-body {
-    padding-bottom: 80px !important;
-}
-.container {
-    padding-top: 230px;
-    padding-bottom: 70px;
+    padding-top: 240px !important; /* Altura suficiente para a navbar fixa */
+    padding-bottom: 70px !important; /* Altura suficiente para o footer fixo */
 }
 
 .scroll-top-btn {
