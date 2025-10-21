@@ -76,6 +76,10 @@ async function fetchSectors() {
 
 // Função para renderizar a lista de pessoas
 function renderPeopleList() {
+    // DEBUG: Mostra os campos de foto para cada pessoa
+    people.forEach((person) => {
+        console.log('[DEBUG FOTO]', person.name, {photoBase64: person.photoBase64, photoUrl: person.photoUrl, photo: person.photo});
+    });
     const adminExtensionList = document.getElementById('adminExtensionList');
     adminExtensionList.innerHTML = ''; // Limpa a lista antes de popular
 
@@ -87,7 +91,18 @@ function renderPeopleList() {
         nameCell.className = 'person-name-cell';
         const photoWrapper = document.createElement('span');
         photoWrapper.className = 'person-table-photo';
-        if (person.photo) {
+        // Depuração: garantir que só entra se o valor for válido e não vazio/nulo
+        if (person.photoBase64 && typeof person.photoBase64 === 'string' && person.photoBase64.startsWith('data:image')) {
+            const img = document.createElement('img');
+            img.src = person.photoBase64;
+            img.alt = person.name;
+            photoWrapper.appendChild(img);
+        } else if (person.photoUrl && typeof person.photoUrl === 'string' && person.photoUrl.length > 10) {
+            const img = document.createElement('img');
+            img.src = person.photoUrl;
+            img.alt = person.name;
+            photoWrapper.appendChild(img);
+        } else if (person.photo && typeof person.photo === 'string' && person.photo.length > 10) {
             const img = document.createElement('img');
             img.src = person.photo;
             img.alt = person.name;
@@ -99,6 +114,7 @@ function renderPeopleList() {
             initialsSpan.textContent = initials;
             photoWrapper.appendChild(initialsSpan);
         }
+        
         nameCell.appendChild(photoWrapper);
         const nameText = document.createElement('span');
         nameText.textContent = person.name;
@@ -584,13 +600,35 @@ document.getElementById('addPersonButton').addEventListener('click', function() 
 });
 
 // Função para limpar o modal de pessoa
+let currentPhotoBase64 = '';
+
 function clearPersonModal() {
     document.getElementById('editIndex').value = '';
     document.getElementById('personName').value = '';
     document.getElementById('personUnit').value = '';
     document.getElementById('personSector').value = '';
     document.getElementById('personExtension').value = '';
+    document.getElementById('personPhoto').value = '';
+    document.getElementById('personPhotoPreview').innerHTML = '';
+    currentPhotoBase64 = '';
 }
+
+// Upload e preview da foto
+const photoInput = document.getElementById('personPhoto');
+const photoPreview = document.getElementById('personPhotoPreview');
+if (photoInput) {
+    photoInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) { photoPreview.innerHTML = ''; currentPhotoBase64 = ''; return; }
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            currentPhotoBase64 = ev.target.result;
+            photoPreview.innerHTML = `<img src='${currentPhotoBase64}' alt='Preview' style='width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid #006c5b;'>`;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
 //Adicionar PESSOA
 async function addOrUpdatePerson() {
     const editIndex = document.getElementById('editIndex').value;
@@ -610,6 +648,7 @@ async function addOrUpdatePerson() {
         unit: personUnit,
         sector: personSector,
         extension: personExtension,
+        photoBase64: currentPhotoBase64 || undefined
     };
 
     try {
@@ -641,9 +680,28 @@ window.editPerson = async function(personId) {
         return; // Sai da função se a pessoa não for encontrada
     }
 
+    // Atualiza preview ao abrir modal de edição
+    const photoPreview = document.getElementById('personPhotoPreview');
+    if (photoPreview) {
+        if (person.photoBase64 && typeof person.photoBase64 === 'string' && person.photoBase64.startsWith('data:image')) {
+            photoPreview.innerHTML = `<img src='${person.photoBase64}' alt='Preview' style='width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid #006c5b;'>`;
+            currentPhotoBase64 = person.photoBase64;
+        } else {
+            const initials = (person.name || '').split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase();
+            photoPreview.innerHTML = `<div style='width:56px;height:56px;border-radius:50%;background:#e1e8ed;display:flex;align-items:center;justify-content:center;font-size:1.7rem;font-weight:bold;color:#006c5b;border:2px solid #006c5b;'>${initials}</div>`;
+            currentPhotoBase64 = '';
+        }
+    }
+    const initials = (person.name || '').split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase();
+    const previewImg = (person.photoBase64 && typeof person.photoBase64 === 'string' && person.photoBase64.startsWith('data:image'))
+        ? `<img id='swal-photo-preview' src='${person.photoBase64}' alt='Preview' style='width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid #006c5b;margin-bottom:8px;'>`
+        : `<div id='swal-photo-preview' style='width:56px;height:56px;border-radius:50%;background:#e1e8ed;display:flex;align-items:center;justify-content:center;font-size:1.7rem;font-weight:bold;color:#006c5b;border:2px solid #006c5b;margin-bottom:8px;'>${initials}</div>`;
+    let tempPhotoBase64 = person.photoBase64 || '';
     const swalResult = await Swal.fire({
         title: 'Editar Pessoa',
         html: `
+        ${previewImg}
+        <input type='file' id='swal-person-photo' accept='image/*' style='margin-bottom:10px;display:block;'>
         <style>
         .swal2-input, .swal2-select {
             width: 100% !important;
@@ -821,7 +879,11 @@ function renderFilteredPeopleList(filteredPeople) {
         // Monta célula do nome com foto/iniciais igual ao renderPeopleList
         let nameCellHtml = `<td class="person-name-cell">`;
         nameCellHtml += `<span class="person-table-photo">`;
-        if (person.photo) {
+        if (person.photoBase64 && typeof person.photoBase64 === 'string' && person.photoBase64.startsWith('data:image')) {
+            nameCellHtml += `<img src="${person.photoBase64}" alt="${person.name}" />`;
+        } else if (person.photoUrl && typeof person.photoUrl === 'string' && person.photoUrl.length > 10) {
+            nameCellHtml += `<img src="${person.photoUrl}" alt="${person.name}" />`;
+        } else if (person.photo && typeof person.photo === 'string' && person.photo.length > 10) {
             nameCellHtml += `<img src="${person.photo}" alt="${person.name}" />`;
         } else {
             const initials = (person.name || '').split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase();
