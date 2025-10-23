@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="refresh" content="5; URL='https://iramais-intermaritima.vercel.app/'" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iRamais Descontinuado</title>
+  <link rel="icon" href="logo-intermartimaOFICIAL2024.png">
+  <style>
+    body {
+      background-color: #006c5b;
+      color: #fff;
+      font-family: "Segoe UI", Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+      margin: 0;
+    }
+    img {
+      width: 180px;
+      margin-bottom: 25px;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+    }
+    h1 {
+      font-size: 1.9rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+      letter-spacing: 0.5px;
+    }
+    p {
+      font-size: 1.1rem;
+      margin: 6px 0;
+      font-weight: 400;
+    }
+    .countdown {
+      font-size: 1.4rem;
+      font-weight: 600;
+      margin-top: 14px;
+      letter-spacing: 1px;
+    }
+    a {
+      color: #fff;
+      text-decoration: underline;
+      font-weight: 500;
+    }
+    footer {
+      position: absolute;
+      bottom: 12px;
+      font-size: 0.9rem;
+      opacity: 0.85;
+    }
+  </style>
+</head>
+<body>
+  <img src="logo-intermartimaOFICIAL2024.png" alt="Logo Intermarítima">
+  <h1>Este endereço foi descontinuado</h1>
+  <p>O iRamais agora está em um novo endereço mais moderno e atualizado.</p>
+  <p>Você será redirecionado automaticamente em <span class="countdown" id="timer">5</span> segundos...</p>
+  <p><a href="https://iramais-intermaritima.vercel.app/">Acessar agora</a></p>
+
+  <footer>Intermarítima Portos e Logística</footer>
+
+  <script>
+    let seconds = 5;
+    const timerEl = document.getElementById("timer");
+    const countdown = setInterval(() => {
+      seconds--;
+      if (seconds <= 0) {
+        clearInterval(countdown);
+        window.location.href = "https://iramais-intermaritima.vercel.app/";
+      } else {
+        timerEl.textContent = seconds;
+      }
+    }, 1000);
+  </script>
+</body>
+</html>
