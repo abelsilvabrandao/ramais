@@ -2048,6 +2048,85 @@ body {
     }
 }
 
+/* Estilos para o botão de chat e popup */
+.chat-button {
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.chat-button i {
+    transition: transform 0.2s;
+}
+
+.chat-button:hover i {
+    transform: scale(1.1);
+}
+
+/* Estilos para o popup de chat */
+.chat-popup {
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translate(-50%, -45%); }
+    to { opacity: 1; transform: translate(-50%, -50%); }
+}
+
+/* Estilos para o overlay */
+.chat-overlay {
+    animation: fadeInOverlay 0.3s ease-out;
+}
+
+@keyframes fadeInOverlay {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Melhorias para o textarea no popup */
+.chat-popup textarea {
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.chat-popup textarea:focus {
+    border-color: #006c5b !important;
+    box-shadow: 0 0 0 2px rgba(0, 108, 91, 0.2);
+    outline: none;
+}
+
+/* Estilo para o container de ações */
+.actions-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Melhorias para os botões do popup */
+.chat-popup button {
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+.chat-popup button:active {
+    transform: translateY(1px);
+}
+
+.chat-popup button:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 108, 91, 0.3);
+}
+
+/* Responsividade para o popup */
+@media (max-width: 480px) {
+    .chat-popup {
+        width: 95% !important;
+        padding: 15px !important;
+    }
+    
+    .chat-popup textarea {
+        min-height: 80px !important;
+    }
+}
+
 .navbar .login-icon {
     margin-left: auto;
     display: flex;

@@ -525,9 +525,9 @@ async function addOrUpdatePerson() {
     const personEmail = document.getElementById('personEmail').value.trim();
     const personExtension = document.getElementById('personExtension').value;
 
-    // Validação dos campos
-    if (!personName || !personUnit || !personSector || !personEmail || !personExtension) {
-        Swal.fire('Erro!', 'Por favor, preencha todos os campos.', 'error');
+    // Validação dos campos (exceto extension que pode ser vazio)
+    if (!personName || !personUnit || !personSector || !personEmail) {
+        Swal.fire('Erro!', 'Por favor, preencha todos os campos obrigatórios.', 'error');
         return;
     }
     // Validação de e-mail simples

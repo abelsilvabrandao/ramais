@@ -464,7 +464,114 @@ function renderPeople(peopleList = []) {
             
             // Adiciona unidade e ramal ao container
             infoContainer.appendChild(unitElement);
-            infoContainer.appendChild(extensionElement);
+            
+            // Cria container para os botões de ação (telefone e chat)
+            const actionsContainer = document.createElement('div');
+            actionsContainer.className = 'actions-container';
+            actionsContainer.style.display = 'flex';
+            actionsContainer.style.alignItems = 'center';
+            actionsContainer.style.gap = '8px';
+            
+            // Verifica se o ramal tem letras ou está vazio
+            const hasLetters = person.extension && /[a-zA-Z]/.test(person.extension);
+            const hasNoExtension = !person.extension || person.extension.trim() === '';
+            const hasValidExtension = !hasLetters && !hasNoExtension;
+            
+            // Adiciona o ícone de chat apenas se o usuário tiver UID (acesso ao chat)
+            let chatButton = null;
+            if (person.uid) {
+                chatButton = document.createElement('div');
+                chatButton.className = 'chat-button';
+                chatButton.innerHTML = '<i class="fas fa-comment-dots" style="font-size: 1.2em;"></i>';
+                chatButton.title = 'Iniciar chat';
+                chatButton.style.cursor = 'pointer';
+                chatButton.style.padding = '6px';
+                chatButton.style.borderRadius = '50%';
+                chatButton.style.transition = 'all 0.2s';
+                chatButton.style.display = 'flex';
+                chatButton.style.alignItems = 'center';
+                chatButton.style.justifyContent = 'center';
+                chatButton.style.color = '#006c5b';
+                chatButton.style.backgroundColor = '#e8f5e9';
+                chatButton.style.border = '1px solid #c8e6c9';
+                
+                // Adiciona evento de clique para abrir o chat
+                chatButton.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    
+                    // Verifica se o usuário está autenticado
+                    const { getAuth, onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js');
+                    const auth = getAuth();
+                    
+                    return new Promise((resolve) => {
+                        const unsubscribe = onAuthStateChanged(auth, (user) => {
+                            unsubscribe(); // Remove o listener após a verificação
+                            if (user) {
+                                // Usuário autenticado, abre o chat
+                                openChatPopup(person);
+                            } else {
+                                // Usuário não autenticado, pergunta se quer fazer login
+                                Swal.fire({
+                                    title: 'Acesso Restrito',
+                                    html: `
+                                        <div style="text-align: center;">
+                                            <div style="font-size: 3.5rem; margin-bottom: 1rem; color: #006c5b;">
+                                                <i class="fas fa-lock"></i>
+                                            </div>
+                                            <p style="font-size: 1.1rem; color: #333; margin-bottom: 1.5rem;">
+                                                O envio de mensagens está disponível apenas para usuários autenticados.
+                                            </p>
+                                            <p style="color: #666; margin-bottom: 1.5rem;">
+                                                Deseja ser redirecionado para a tela de login agora?
+                                            </p>
+                                        </div>
+                                    `,
+                                    showCancelButton: true,
+                                    confirmButtonColor: '#006c5b',
+                                    cancelButtonColor: '#6c757d',
+                                    confirmButtonText: '<i class="fas fa-sign-in-alt"></i> Fazer Login',
+                                    cancelButtonText: '<i class="fas fa-times"></i> Continuar Navegando',
+                                    reverseButtons: true,
+                                    customClass: {
+                                        confirmButton: 'swal-confirm-btn',
+                                        cancelButton: 'swal-cancel-btn'
+                                    },
+                                    buttonsStyling: false
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        // Redireciona para a página de login
+                                        window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname);
+                                    }
+                                });
+                            }
+                            resolve();
+                        });
+                    });
+                });
+                
+                // Efeitos de hover
+                chatButton.addEventListener('mouseenter', () => {
+                    chatButton.style.backgroundColor = '#d4edda';
+                    chatButton.style.transform = 'scale(1.1)';
+                });
+                
+                chatButton.addEventListener('mouseleave', () => {
+                    chatButton.style.backgroundColor = '#e8f5e9';
+                    chatButton.style.transform = 'scale(1)';
+                });
+            }
+            
+            // Ajusta o estilo do elemento de extensão baseado na validade do número
+            if (hasNoExtension || hasLetters) {
+                extensionElement.style.display = 'none'; // Esconde o botão de ligação
+            }
+            
+            // Adiciona os botões ao container de ações, se existirem
+            if (chatButton) actionsContainer.appendChild(chatButton);
+            if (hasValidExtension) actionsContainer.appendChild(extensionElement);
+            
+            // Adiciona o container de ações ao infoContainer
+            infoContainer.appendChild(actionsContainer);
             
             // Adiciona todos os elementos ao card
             card.appendChild(profilePic);
@@ -473,6 +580,123 @@ function renderPeople(peopleList = []) {
             card.appendChild(infoContainer);
             
             cardsContainer.appendChild(card);
+            
+            // Função para abrir o popup de chat
+            function openChatPopup(person) {
+                // Fecha qualquer popup de chat aberto
+                const existingPopup = document.querySelector('.chat-popup');
+                if (existingPopup) {
+                    existingPopup.remove();
+                    return;
+                }
+                
+                // Cria o popup
+                const popup = document.createElement('div');
+                popup.className = 'chat-popup';
+                popup.style.position = 'fixed';
+                popup.style.top = '50%';
+                popup.style.left = '50%';
+                popup.style.transform = 'translate(-50%, -50%)';
+                popup.style.backgroundColor = 'white';
+                popup.style.borderRadius = '12px';
+                popup.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.15)';
+                popup.style.padding = '20px';
+                popup.style.zIndex = '1000';
+                popup.style.width = '90%';
+                popup.style.maxWidth = '400px';
+                popup.style.maxHeight = '80vh';
+                popup.style.overflowY = 'auto';
+                
+                // Cria o conteúdo do popup
+                popup.innerHTML = `
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <div style="font-size: 1.2em; font-weight: bold; color: #006c5b; margin-bottom: 10px;">
+                            Chat com ${person.name}
+                        </div>
+                        <div style="color: #666; margin-bottom: 20px;">
+                            Este é um espaço para conversar com ${person.name.split(' ')[0]}.
+                        </div>
+                        <div style="background-color: #f5f5f5; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                            <div style="margin-bottom: 10px; text-align: left; font-weight: bold;">Mensagem:</div>
+                            <textarea id="chatMessage" style="width: 100%; min-height: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; resize: none;" placeholder="Digite sua mensagem aqui..."></textarea>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; gap: 10px;">
+                            <button id="cancelChat" style="flex: 1; padding: 10px; background-color: #f1f1f1; border: none; border-radius: 6px; cursor: pointer;">
+                                Cancelar
+                            </button>
+                            <button id="sendMessage" style="flex: 1; padding: 10px; background-color: #006c5b; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                                Enviar Mensagem
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                // Adiciona o popup ao body
+                document.body.appendChild(popup);
+                
+                // Adiciona overlay
+                const overlay = document.createElement('div');
+                overlay.className = 'chat-overlay';
+                overlay.style.position = 'fixed';
+                overlay.style.top = '0';
+                overlay.style.left = '0';
+                overlay.style.width = '100%';
+                overlay.style.height = '100%';
+                overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+                overlay.style.zIndex = '999';
+                document.body.appendChild(overlay);
+                
+                // Adiciona evento para fechar o popup ao clicar no overlay
+                overlay.addEventListener('click', () => {
+                    popup.remove();
+                    overlay.remove();
+                });
+                
+                // Adiciona evento para o botão cancelar
+                const cancelButton = popup.querySelector('#cancelChat');
+                if (cancelButton) {
+                    cancelButton.addEventListener('click', () => {
+                        popup.remove();
+                        overlay.remove();
+                    });
+                }
+                
+                // Adiciona evento para o botão enviar
+                const sendButton = popup.querySelector('#sendMessage');
+                if (sendButton) {
+                    sendButton.addEventListener('click', () => {
+                        const message = document.getElementById('chatMessage').value.trim();
+                        if (message) {
+                            // Aqui você pode adicionar a lógica para enviar a mensagem
+                            Swal.fire({
+                                title: 'Mensagem Enviada!',
+                                text: `Sua mensagem para ${person.name} foi enviada com sucesso.`,
+                                icon: 'success',
+                                confirmButtonColor: '#006c5b',
+                                confirmButtonText: 'OK'
+                            });
+                            
+                            // Fecha o popup após enviar
+                            popup.remove();
+                            overlay.remove();
+                        } else {
+                            Swal.fire({
+                                title: 'Mensagem Vazia',
+                                text: 'Por favor, digite uma mensagem antes de enviar.',
+                                icon: 'warning',
+                                confirmButtonColor: '#006c5b',
+                                confirmButtonText: 'Entendi'
+                            });
+                        }
+                    });
+                }
+                
+                // Foca no campo de mensagem ao abrir o popup
+                const messageInput = popup.querySelector('#chatMessage');
+                if (messageInput) {
+                    messageInput.focus();
+                }
+            }
         });
         
         sectorDiv.appendChild(cardsContainer);

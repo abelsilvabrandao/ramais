@@ -187,7 +187,17 @@
                     const q = query(collection(db, 'people'), where('email', '==', email));
                     const snap = await getDocs(q);
                     const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                    window.location.href = 'index.html';
+                    
+                    // Verifica se há um parâmetro de redirecionamento na URL
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const redirectUrl = urlParams.get('redirect');
+                    
+                    // Redireciona para a URL de origem ou para a página inicial
+                    if (redirectUrl) {
+                        window.location.href = redirectUrl;
+                    } else {
+                        window.location.href = 'index.html';
+                    }
                 } catch (error) {
                     loginError.textContent = 'E-mail ou senha inválidos.';
                     loginError.style.display = 'block';
