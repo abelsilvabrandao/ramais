@@ -91,18 +91,18 @@
             <img src="Infinity@1x-1.0s-200px-200px.svg" alt="Loading..." width="100" height="100">
         </div>
         <div class="lista-pessoas">
-            <h2>LISTA DE RAMAIS</h2>
             <div id="totalPessoas" style="font-weight: bold; margin-bottom: 20px;">
-                Total de ramais cadastrados: <span id="quantidadePessoas">0</span>
+                Total de Ramais Cadastrados: <span id="quantidadePessoas"></span>
             </div>
             <div class="scrollable"> <!-- Adicionando contêiner com rolagem -->
                 <table class="peopleTable">
                     <thead>
                         <tr>
                             <th>Nome</th>
-                            <th>Unidade Intermarítima</th>
+                            <th>Unidade</th>
                             <th>Setor</th>
                             <th>Ramal</th>
+                            <th>E-mail</th>
                             <th class="actions">Ações</th>
                         </tr>
                     </thead>
@@ -204,9 +204,13 @@
                 <option value="">Selecione o Setor</option>
             </select>
         </div>
-        <div class="form-group" style="margin-bottom: 20px;">
-            <label for="personExtension">Ramal:</label>
-            <input type="text" id="personExtension" placeholder="Ramal" class="modal-input">
+        <div class="form-group" style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+            <label for="personEmail" style="min-width: 140px;">E-mail corporativo:</label>
+            <input type="email" id="personEmail" placeholder="E-mail corporativo" class="modal-input" style="flex: 1;">
+        </div>
+        <div class="form-group" style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+            <label for="personExtension" style="min-width: 60px;">Ramal:</label>
+            <input type="text" id="personExtension" placeholder="Ramal" class="modal-input" style="flex: 1;">
         </div>
         <div style="display: flex; gap: 12px; justify-content: flex-start;">
             <button id="savePersonButton" class="modal-btn primary">Salvar</button>
@@ -256,7 +260,7 @@
 <footer class="main-footer">
   <div class="footer-content">
     <div>© 2025 Intermarítima. Todos os direitos reservados.</div>
-    <div>Desenvolvido por <strong>Intermarítima</strong> | Versão 1.3.0</div>
+    <div>Desenvolvido por <strong>Intermarítima</strong> | Versão 1.5.0</div>
   </div>
 </footer>
 </body>

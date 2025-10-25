@@ -45,6 +45,24 @@ button {
     color: white;
 }
 
+.btn-edit {
+    background-color: #006c5b !important;
+    color: #fff !important;
+}
+
+.btn-edit:hover {
+    background-color: #4CAF50 !important;
+}
+
+.btn-delete {
+    background-color: #c91414 !important;
+    color: #fff !important;
+}
+
+.btn-delete:hover {
+    background-color: #ff4c4c !important;
+}
+
 button:hover {
     background-color: #4CAF50;
 }
@@ -65,12 +83,14 @@ button:hover {
 }
 
 .peopleTable th {
-    background-color: #006c5b;
     color: white;
+    background-color: #006c5b;
+    padding: 8px;
+    text-align: center;
     font-weight: bold;
-    font-size: 1rem;
-    white-space: nowrap;
+    font-size: 16px;
 }
+
 .peopleTable th.actions, .peopleTable td.actions {
     text-align: center;
     min-width: 110px;
@@ -292,13 +312,18 @@ th {
 .modal {
     display: none;
     position: fixed;
-    z-index: 1000;
+    z-index: 99999 !important;
     left: 0;
     top: 0;
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    height: 100vh;
     overflow: auto;
     background-color: rgba(0, 0, 0, 0.5);
+}
+
+footer.main-footer, .main-footer {
+    z-index: 10 !important;
+    position: relative;
 }
 
 .modal-content {
@@ -376,10 +401,6 @@ th {
     margin-top: 10px;
 }
 
-.actions {
-    display: flex;
-    gap: 10px;
-}
 
 /* Estilos para os botões dentro do modal */
 .modal-content .button {
@@ -412,5 +433,59 @@ th {
 
 #totalPessoas {
     font-size: 18px;
-    color: #006c5b; /* Cor que combina com o tema */
+    color: #006c5b;
+    margin-top: 40px; /* espaçamento maior acima */
+    margin-bottom: 20px;
+    display: block;
+}
+
+.peopleTable thead th {
+    position: sticky;
+    top: 0;
+    background: #006c5b;
+    z-index: 3;
+}
+.peopleTable thead th:first-child {
+    border-top-left-radius: 12px;
+}
+.peopleTable thead th:last-child {
+    border-top-right-radius: 12px;
+}
+.scrollable {
+    position: relative;
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    margin-top: 10px;
+    padding-top: 0;
+}
+.peopleTable {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+.peopleTable th.actions {
+    position: sticky;
+    top: 0;
+    background: #006c5b;
+    z-index: 3;
+}
+
+.peopleTable td.actions button {
+    min-width: 70px;
+    margin: 0 2px;
+    font-size: 0.97rem;
+    padding: 4px 0;
+    border-radius: 7px;
+    font-weight: 600;
+    line-height: 1.1;
+    height: 32px;
+    max-height: 32px;
+    display: inline-block;
+}
+.scrollable {
+    position: relative;
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    margin-top: 10px;
 }

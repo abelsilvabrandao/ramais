@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Login - iRamais</title>
+    <link rel="stylesheet" href="stylesusuario.css">
+    <style>
+        body { background: #f2f8f4; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .login-container {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+            padding: 32px 28px 28px 28px;
+            max-width: 360px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .login-logo { width: 110px; margin-bottom: 18px; }
+        .login-title { color: #006c5b; font-size: 1.5rem; font-weight: bold; margin-bottom: 8px; }
+        .login-form { width: 100%; }
+        .login-form label { font-weight: 600; color: #006c5b; margin-bottom: 4px; display: block; }
+        .login-form input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid #c8d6d4;
+            margin-bottom: 16px;
+            font-size: 1rem;
+            display: block;
+        }
+        .login-form button {
+            width: 100%;
+            padding: 12px;
+            background: #006c5b;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background .2s;
+        }
+        .login-form button:hover { background: #004e44; }
+        .login-error {
+            background: #ffeaea;
+            color: #c91414;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 0.97rem;
+            margin-bottom: 12px;
+            display: none;
+        }
+        @media (max-width: 500px) {
+            .login-container { padding: 20px 6vw; }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDa_qvmvyVyJVe936hW5QoDtviIrITcvDI",
+            authDomain: "ramais-63a73.firebaseapp.com",
+            projectId: "ramais-63a73",
+            storageBucket: "ramais-63a73.appspot.com",
+            messagingSenderId: "695161860787",
+            appId: "1:695161860787:web:98e73e5fc79a5cbb2f76c6",
+            measurementId: "G-X3121MPE65"
+        };
+        import { getApps } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        let app;
+        if (!getApps().length) {
+            app = initializeApp(firebaseConfig);
+        } else {
+            app = getApps()[0];
+        }
+        const auth = getAuth();
+        const db = getFirestore(app);
+
+        let isRegistering = false;
+        onAuthStateChanged(auth, async user => {
+            if (user && !isRegistering) {
+                window.location.href = "index.html";
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const showRegister = document.getElementById('showRegister');
+            const showLogin = document.getElementById('showLogin');
+            const loginError = document.getElementById('loginError');
+            const registerError = document.getElementById('registerError');
+
+            showRegister.onclick = async () => {
+                loginForm.style.display = 'none';
+                registerForm.style.display = 'block';
+                // Carregar unidades e setores do Firestore
+                const unitSelect = document.getElementById('regUnit');
+                const sectorSelect = document.getElementById('regSector');
+                unitSelect.innerHTML = '<option value="">Selecione a unidade</option>';
+                sectorSelect.innerHTML = '<option value="">Selecione o setor</option>';
+                try {
+                    const snap = await getDocs(collection(db, 'people'));
+                    const units = new Set();
+                    const sectors = new Set();
+                    snap.forEach(doc => {
+                        const d = doc.data();
+                        if (d.unit) units.add(d.unit);
+                        if (d.sector) sectors.add(d.sector);
+                    });
+                    Array.from(units).sort().forEach(u => {
+                        unitSelect.innerHTML += `<option value="${u}">${u}</option>`;
+                    });
+                    Array.from(sectors).sort().forEach(s => {
+                        sectorSelect.innerHTML += `<option value="${s}">${s}</option>`;
+                    });
+                } catch (e) {
+                    unitSelect.innerHTML = '<option value="">Erro ao carregar unidades</option>';
+                    sectorSelect.innerHTML = '<option value="">Erro ao carregar setores</option>';
+                }
+            };
+
+            showLogin.onclick = () => {
+                registerForm.style.display = 'none';
+                loginForm.style.display = 'block';
+            };
+            document.getElementById('cancelRegister').onclick = () => {
+                window.location.href = 'index.html';
+            };
+            document.getElementById('cancelLogin').onclick = () => {
+                window.location.href = 'index.html';
+            };
+
+            // Reset de senha padrão Firebase Auth
+            document.getElementById('forgotPasswordBtn').onclick = async () => {
+                loginError.style.display = 'none';
+                const { value: email } = await Swal.fire({
+                    title: 'Redefinir senha',
+                    input: 'email',
+                    inputLabel: 'Informe seu e-mail cadastrado',
+                    inputPlaceholder: 'email@empresa.com.br',
+                    showCancelButton: true,
+                    confirmButtonText: 'Enviar link de redefinição',
+                    cancelButtonText: 'Cancelar',
+                    inputValidator: v => !v ? 'Digite o e-mail' : undefined
+                });
+                if (!email) return;
+                Swal.showLoading();
+                try {
+                    // Setar flag mustChangePassword em people
+                    const q = query(collection(db, 'people'), where('email', '==', email.trim()));
+                    const snap = await getDocs(q);
+                    if (!snap.empty) {
+                        await setDoc(doc(db, 'people', snap.docs[0].id), { mustChangePassword: true }, { merge: true });
+                    }
+                    await sendPasswordResetEmail(auth, email.trim());
+                    await Swal.fire('E-mail enviado', 'Verifique sua caixa de entrada e siga as instruções para redefinir sua senha.', 'success');
+                } catch (err) {
+                    Swal.fire('Erro', 'Não foi possível enviar o e-mail de redefinição. Verifique se o e-mail está correto e cadastrado.', 'error');
+                }
+            };
+
+
+
+
+            loginForm.onsubmit = async e => {
+                e.preventDefault();
+                loginError.style.display = 'none';
+                const email = loginForm.email.value.trim();
+                const password = loginForm.password.value;
+                if (!email || !password) {
+                    loginError.textContent = 'Preencha e-mail e senha.';
+                    loginError.style.display = 'block';
+                    return;
+                }
+                try {
+                    // Buscar senha temporária em people
+                    const q = query(collection(db, 'people'), where('email', '==', email));
+                    const snap = await getDocs(q);
+                    let mustChangePassword = false;
+                    if (!snap.empty) {
+                        mustChangePassword = !!snap.docs[0].data().mustChangePassword;
+                    }
+                    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                    // Se mustChangePassword=true, forçar troca
+                    if (mustChangePassword) {
+                        let novaSenha = '';
+                        while (true) {
+                            const { value: nova } = await Swal.fire({
+                                title: 'Troca de Senha Obrigatória',
+                                input: 'password',
+                                inputLabel: 'Digite uma nova senha forte',
+                                inputPlaceholder: 'Nova senha',
+                                showCancelButton: false,
+                                confirmButtonText: 'Trocar',
+                                inputValidator: v => {
+                                    const strongPassword = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
+                                    if (!v) return 'Digite a nova senha';
+                                    if (!strongPassword.test(v)) return 'Senha fraca. Use 8+ caracteres, maiúscula, minúscula, número e especial.';
+                                    return undefined;
+                                }
+                            });
+                            if (nova) {
+                                novaSenha = nova;
+                                break;
+                            }
+                        }
+                        // Atualizar senha no Auth e limpar flag em people
+                        await userCredential.user.updatePassword(novaSenha);
+                        await setDoc(doc(db, 'people', snap.docs[0].id), { mustChangePassword: false }, { merge: true });
+                        await Swal.fire('Senha alterada', 'Sua senha foi atualizada com sucesso!', 'success');
+                    }
+                    window.location.href = 'index.html';
+                } catch (error) {
+                    loginError.textContent = 'E-mail ou senha inválidos.';
+                    loginError.style.display = 'block';
+                }
+            };
+
+            registerForm.onsubmit = async e => {
+                e.preventDefault();
+                isRegistering = true;
+                registerError.style.display = 'none';
+                const email = registerForm.regEmail.value.trim();
+                const unit = registerForm.regUnit.value.trim();
+                const sector = registerForm.regSector.value.trim();
+                const ramal = registerForm.regRamal.value.trim();
+                const password = registerForm.regPassword.value;
+                if (!email || !unit || !sector || !password) {
+                    registerError.textContent = 'Preencha todos os campos obrigatórios.';
+                    registerError.style.display = 'block';
+                    return;
+                }
+                // Validação de senha forte
+                const strongPassword = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
+                if (!strongPassword.test(password)) {
+                    registerError.textContent = 'A senha deve ter pelo menos 8 caracteres, incluindo maiúscula, minúscula, número e caractere especial.';
+                    registerError.style.display = 'block';
+                    return;
+                }
+                try {
+                    // Verifica se existe o e-mail na collection people
+                    const q = query(collection(db, 'people'), where('email', '==', email));
+                    const snap = await getDocs(q);
+                    if (snap.empty) {
+                        registerError.textContent = 'E-mail não cadastrado como ramal. Solicite ao administrador.';
+                        registerError.style.display = 'block';
+                        return;
+                    }
+                    const person = snap.docs[0].data();
+                    // Verifica divergência de unidade/setor
+                    if ((person.unit||'').trim() !== unit.trim() || (person.sector||'').trim() !== sector.trim()) {
+                        registerError.textContent = 'Unidade ou setor divergente do cadastro. Confira os dados.';
+                        registerError.style.display = 'block';
+                        return;
+                    }
+                    // Cria usuário Auth
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                    // Atualiza ramal e senha em people
+                    await setDoc(doc(db, 'people', snap.docs[0].id), {
+                        extension: ramal,
+                        status: 'available',
+                        online: true,
+                        lastSeen: new Date().toISOString(),
+                        uid: userCredential.user.uid,
+                        // Não armazene senha em texto puro na prática! Aqui apenas placeholder
+                        senha: password
+                    }, { merge: true });
+                    let avatarHtml;
+if (person.photoUrl) {
+    avatarHtml = `<img src='${person.photoUrl}' alt='avatar' style='width:64px;height:64px;border-radius:50%;object-fit:cover;box-shadow:0 2px 8px #d0e3de;margin-bottom:8px;'>`;
+} else {
+    const initials = (person.name||email).split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+    avatarHtml = `<div style='width:64px;height:64px;border-radius:50%;background:#e1e8ed;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:bold;color:#006c5b;box-shadow:0 2px 8px #d0e3de;margin-bottom:8px;'>${initials}</div>`;
+}
+const cardHtml = `
+    <div style='display:flex;flex-direction:column;align-items:center;padding:8px 0 0 0;'>
+        ${avatarHtml}
+        <div style='font-size:1.18em;font-weight:600;color:#006c5b;margin-bottom:2px;'>${person.name||email}</div>
+        <div style='font-size:.98em;color:#555;margin-bottom:2px;'>${person.sector||sector} | ${person.unit||unit}</div>
+        <div style='font-size:.98em;color:#888;margin-bottom:10px;'>Ramal: <b>${ramal||person.ramal||'-'}</b></div>
+    </div>
+    <div style='font-size:1.09em;margin-bottom:8px;'>Seu acesso foi criado.<br>Deseja entrar agora no chat?</div>
+`;
+const result = await Swal.fire({
+    icon: 'success',
+    title: 'Conta criada com sucesso!',
+    html: cardHtml,
+    showCancelButton: true,
+    confirmButtonText: 'Entrar no Chat',
+    cancelButtonText: 'Agora não',
+    customClass: { popup: 'swal2-login-modal' }
+});
+if (result.isConfirmed) {
+    window.location.href = 'index.html';
+}
+// Se clicar em "Agora não", nada acontece, permanece na tela atual.
+                } catch (error) {
+                    if (error.code === 'auth/email-already-in-use') {
+                        registerError.textContent = 'E-mail já cadastrado. Faça login.';
+                    } else {
+                        registerError.textContent = 'Erro ao cadastrar: ' + (error.message || 'Tente novamente.');
+                    }
+                    registerError.style.display = 'block';
+                }
+            };
+        });
+    </script>
+</head>
+<body>
+    <div class="login-container">
+        <img src="logo-intermartimaOFICIAL2024.png" alt="Intermarítima" class="login-logo" />
+        <div class="login-title">Acesso ao iRamais</div>
+        <form id="loginForm" class="login-form" autocomplete="on">
+            <div id="loginError" class="login-error"></div>
+            <label for="email">E-mail</label>
+            <input type="email" id="email" name="email" placeholder="Seu e-mail corporativo" required autocomplete="username">
+            <label for="password">Senha</label>
+            <input type="password" id="password" name="password" placeholder="Sua senha" required autocomplete="current-password">
+            <button type="submit">Entrar</button>
+            <button type="button" id="forgotPasswordBtn" style="margin-top:8px;background:#f4f4f4;color:#006c5b;">Esqueci minha senha</button>
+            <button type="button" id="showRegister" style="margin-top:8px;background:#e6f7f4;color:#006c5b;">Cadastrar</button>
+            <button type="button" id="cancelLogin" style="margin-top:8px;background:#ffeaea;color:#c91414;">Cancelar</button>
+        </form>
+        <form id="registerForm" class="login-form" style="display:none;">
+            <div id="registerError" class="login-error"></div>
+            <label for="regEmail">E-mail</label>
+            <input type="email" id="regEmail" name="regEmail" placeholder="Seu e-mail corporativo" required>
+            <label for="regUnit">Unidade</label>
+            <select id="regUnit" name="regUnit" required style="width:100%;margin-bottom:16px;"></select>
+            <label for="regSector">Setor</label>
+            <select id="regSector" name="regSector" required style="width:100%;margin-bottom:16px;"></select>
+            <label for="regRamal">Ramal (opcional)</label>
+            <input type="text" id="regRamal" name="regRamal" placeholder="Ramal">
+            <label for="regPassword">Senha</label>
+            <input type="password" id="regPassword" name="regPassword" placeholder="Crie uma senha" required>
+            <button type="submit">Cadastrar</button>
+            <button type="button" id="showLogin" style="margin-top:8px;background:#f4f4f4;color:#006c5b;">Voltar</button>
+            <button type="button" id="cancelRegister" style="margin-top:8px;background:#ffeaea;color:#c91414;">Cancelar</button>
+        </form>
+    </div>
+</body>
+</html>

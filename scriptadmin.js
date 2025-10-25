@@ -37,8 +37,7 @@ async function fetchPeople() {
 
         onSnapshot(peopleCollection, (snapshot) => {
             people = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            console.log('Pessoas carregadas:', people); 
-            renderPeopleList(); 
+            console.log('Pessoas carregadas:', people);  
             updateTotalPeopleCount(); // Atualiza a contagem de pessoas
             clearTimeout(loadingTimeout); 
             loadingElement.style.display = 'none';            
@@ -74,81 +73,7 @@ async function fetchSectors() {
     });
 }
 
-// Função para renderizar a lista de pessoas
-function renderPeopleList() {
-    // DEBUG: Mostra os campos de foto para cada pessoa
-    people.forEach((person) => {
-        console.log('[DEBUG FOTO]', person.name, {photoBase64: person.photoBase64, photoUrl: person.photoUrl, photo: person.photo});
-    });
-    const adminExtensionList = document.getElementById('adminExtensionList');
-    adminExtensionList.innerHTML = ''; // Limpa a lista antes de popular
 
-    people.forEach((person) => {
-        const row = document.createElement('tr');
-    
-        // Célula do nome com foto/iniciais
-        const nameCell = document.createElement('td');
-        nameCell.className = 'person-name-cell';
-        const photoWrapper = document.createElement('span');
-        photoWrapper.className = 'person-table-photo';
-        // Depuração: garantir que só entra se o valor for válido e não vazio/nulo
-        if (person.photoBase64 && typeof person.photoBase64 === 'string' && person.photoBase64.startsWith('data:image')) {
-            const img = document.createElement('img');
-            img.src = person.photoBase64;
-            img.alt = person.name;
-            photoWrapper.appendChild(img);
-        } else if (person.photoUrl && typeof person.photoUrl === 'string' && person.photoUrl.length > 10) {
-            const img = document.createElement('img');
-            img.src = person.photoUrl;
-            img.alt = person.name;
-            photoWrapper.appendChild(img);
-        } else if (person.photo && typeof person.photo === 'string' && person.photo.length > 10) {
-            const img = document.createElement('img');
-            img.src = person.photo;
-            img.alt = person.name;
-            photoWrapper.appendChild(img);
-        } else {
-            const initials = (person.name || '').split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase();
-            const initialsSpan = document.createElement('span');
-            initialsSpan.className = 'person-table-initials';
-            initialsSpan.textContent = initials;
-            photoWrapper.appendChild(initialsSpan);
-        }
-        
-        nameCell.appendChild(photoWrapper);
-        const nameText = document.createElement('span');
-        nameText.textContent = person.name;
-        nameCell.appendChild(nameText);
-    
-        const unitCell = document.createElement('td');
-        unitCell.textContent = person.unit;
-    
-        const sectorCell = document.createElement('td');
-        sectorCell.textContent = person.sector;
-    
-        const extensionCell = document.createElement('td');
-        extensionCell.textContent = person.extension;
-    
-        const actionsCell = document.createElement('td');
-        const editButton = document.createElement('button');
-        editButton.textContent = 'Editar';
-        editButton.onclick = () => editPerson(person.id); // Use o ID da pessoa em vez do índice
-        actionsCell.appendChild(editButton);
-    
-        const deleteButton = document.createElement('button');
-        deleteButton.textContent = 'Excluir';
-        deleteButton.onclick = () => deletePerson(person.id); // Passando o ID da pessoa
-        actionsCell.appendChild(deleteButton);
-    
-        row.appendChild(nameCell);
-        row.appendChild(unitCell);
-        row.appendChild(sectorCell);
-        row.appendChild(extensionCell);
-        row.appendChild(actionsCell);
-    
-        adminExtensionList.appendChild(row);
-    });
-}
 
 // Chamar funções de busca no carregamento
 document.addEventListener('DOMContentLoaded', function() {
@@ -212,44 +137,6 @@ function populateSectorList() {
     });
 }
 
-// Função para popular a lista de pessoas
-function populatePeopleList() {
-    const adminExtensionList = document.getElementById('adminExtensionList');
-    adminExtensionList.innerHTML = ''; // Limpa a lista antes de popular
-
-    people.forEach((person) => {
-        const row = document.createElement('tr');
-        const nameCell = document.createElement('td');
-        const unitCell = document.createElement('td');
-        const sectorCell = document.createElement('td');
-        const extensionCell = document.createElement('td');
-        const actionsCell = document.createElement('td');
-
-        nameCell.textContent = person.name;
-        unitCell.textContent = person.unit;
-        sectorCell.textContent = person.sector;
-        extensionCell.textContent = person.extension;
-
-        const editButton = document.createElement('button');
-        editButton.textContent = 'Editar';
-        editButton.onclick = () => editPerson(person.id); // Passando o ID da pessoa
-
-        const deleteButton = document.createElement('button');
-        deleteButton.textContent = 'Excluir';
-        deleteButton.onclick = () => deletePerson(person.id); // Passando o ID da pessoa
-
-        actionsCell.appendChild(editButton);
-        actionsCell.appendChild(deleteButton);
-
-        row.appendChild(nameCell);
-        row.appendChild(unitCell);
-        row.appendChild(sectorCell);
-        row.appendChild(extensionCell);
-        row.appendChild(actionsCell);
-
-        adminExtensionList.appendChild(row);
-    });
-}
 // script PARA OS BOTÕES ADICIONAR UNIDADE, ADICIONAR PESSOA
 document.addEventListener('DOMContentLoaded', function() {
     const addUnitSectorButton = document.getElementById('addUnitSectorButton');
@@ -635,11 +522,17 @@ async function addOrUpdatePerson() {
     const personName = document.getElementById('personName').value.trim();
     const personUnit = document.getElementById('personUnit').value;
     const personSector = document.getElementById('personSector').value;
+    const personEmail = document.getElementById('personEmail').value.trim();
     const personExtension = document.getElementById('personExtension').value;
 
     // Validação dos campos
-    if (!personName || !personUnit || !personSector || !personExtension) {
+    if (!personName || !personUnit || !personSector || !personEmail || !personExtension) {
         Swal.fire('Erro!', 'Por favor, preencha todos os campos.', 'error');
+        return;
+    }
+    // Validação de e-mail simples
+    if (!/^\S+@\S+\.\S+$/.test(personEmail)) {
+        Swal.fire('Erro!', 'E-mail inválido.', 'error');
         return;
     }
 
@@ -647,6 +540,7 @@ async function addOrUpdatePerson() {
         name: personName,
         unit: personUnit,
         sector: personSector,
+        email: personEmail,
         extension: personExtension,
         photoBase64: currentPhotoBase64 || undefined
     };
@@ -753,7 +647,14 @@ window.editPerson = async function(personId) {
                 <option value="">Selecione o Setor</option>
                 ${sectors.map(sector => `<option value="${sector.name}" ${sector.name === person.sector ? 'selected' : ''}>${sector.name}</option>`).join('')}
             </select><p>
-            Ramal:<input type="text" id="personExtensionInput" class="swal2-input" placeholder="Ramal" value="${person.extension}">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                <label for="personEmailInput" style="min-width: 140px;">E-mail corporativo:</label>
+                <input type="email" id="personEmailInput" class="swal2-input" placeholder="E-mail corporativo" value="${person.email || ''}" style="flex: 1; margin-bottom: 0;">
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                <label for="personExtensionInput" style="min-width: 60px;">Ramal:</label>
+                <input type="text" id="personExtensionInput" class="swal2-input" placeholder="Ramal" value="${person.extension}" style="flex: 1; margin-bottom: 0;">
+            </div>
         `,
         focusConfirm: false,
         showCancelButton: true,
@@ -763,25 +664,30 @@ window.editPerson = async function(personId) {
             const name = document.getElementById('personNameInput').value.trim();
             const unit = document.getElementById('personUnitInput').value;
             const sector = document.getElementById('personSectorInput').value;
+            const email = document.getElementById('personEmailInput').value.trim();
             const extension = document.getElementById('personExtensionInput').value;
             // Validações
-            if (!name || !unit || !sector || !extension) {
+            if (!name || !unit || !sector || !email || !extension) {
                 Swal.showValidationMessage('Por favor, preencha todos os campos.');
                 return false;
             }
-
-            return { name, unit, sector, extension }; // Removendo email e corporatePhone
+            if (!/^\S+@\S+\.\S+$/.test(email)) {
+                Swal.showValidationMessage('E-mail inválido.');
+                return false;
+            }
+            return { name, unit, sector, email, extension };
         }
     });
 
     if (swalResult.isConfirmed && swalResult.value) {
-        const { name, unit, sector, extension } = swalResult.value;
+        const { name, unit, sector, email, extension } = swalResult.value;
 
         const personDoc = doc(db, 'people', person.id);
         await updateDoc(personDoc, {
             name,
             unit,
             sector,
+            email,
             extension
         });
         Swal.fire('Atualizado!', 'Pessoa atualizada com sucesso!', 'success');
@@ -869,14 +775,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Função para renderizar a lista filtrada de pessoas
+// Função para renderizar a lista e filtrar pessoas
 function renderFilteredPeopleList(filteredPeople) {
     const adminExtensionList = document.getElementById('adminExtensionList');
     adminExtensionList.innerHTML = '';
 
     filteredPeople.forEach((person, index) => {
         const row = document.createElement('tr');
-        // Monta célula do nome com foto/iniciais igual ao renderPeopleList
+        // Monta célula do nome com foto/iniciais igual ao renderFilteredPeopleList
         let nameCellHtml = `<td class="person-name-cell">`;
         nameCellHtml += `<span class="person-table-photo">`;
         if (person.photoBase64 && typeof person.photoBase64 === 'string' && person.photoBase64.startsWith('data:image')) {
@@ -897,6 +803,7 @@ function renderFilteredPeopleList(filteredPeople) {
             <td>${person.unit}</td>
             <td>${person.sector}</td>
             <td>${person.extension}</td>
+            <td>${person.email && person.email !== 'undefined' ? person.email : `<span style='color:#888; font-style:italic; display: flex; align-items: center; gap: 4px;'><svg xmlns='http://www.w3.org/2000/svg' width='15' height='15' fill='none' viewBox='0 0 24 24' style='vertical-align:middle;'><circle cx='12' cy='12' r='10' fill='#2196f3'/><text x='12' y='17' text-anchor='middle' font-size='15' fill='#fff' font-family='Arial' font-weight='bold'>i</text></svg>sem e-mail cadastrado</span>`}</td>
             <td class="actions">
                 <button onclick="editPerson('${person.id}')">Editar</button>
                 <button onclick="deletePerson('${person.id}')">Excluir</button>
@@ -904,6 +811,9 @@ function renderFilteredPeopleList(filteredPeople) {
         `;
         adminExtensionList.appendChild(row);
     });
+    // Atualiza o total de ramais exibido
+    const quantidadePessoas = document.getElementById('quantidadePessoas');
+    quantidadePessoas.textContent = filteredPeople.length;
 }
 
 // Suponha que você tenha um array de pessoas
@@ -914,19 +824,6 @@ function atualizarQuantidadePessoas() {
     quantidadePessoas.textContent = pessoas.length; // Atualiza o número de pessoas cadastradas
 }
 
-// Função para adicionar uma nova pessoa
-function adicionarPessoa(novaPessoa) {
-    pessoas.push(novaPessoa);
-    atualizarQuantidadePessoas(); // Atualiza a quantidade após adicionar
-}
-
-// Função para remover uma pessoa
-function removerPessoa(index) {
-    if (index > -1 && index < pessoas.length) {
-        pessoas.splice(index, 1);
-        atualizarQuantidadePessoas(); // Atualiza a quantidade após remover
-    }
-}
 
 // Chame essa função inicialmente para definir a quantidade
 atualizarQuantidadePessoas();
