@@ -285,6 +285,41 @@ button {
 .status-available { color: #2ecc71; }
 .status-busy { color: #e74c3c; }
 
+/* Estilos para SweetAlert */
+.swal-confirm-btn,
+.swal-cancel-btn {
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin: 0 8px;
+    border: none;
+}
+
+.swal-confirm-btn {
+    background-color: #006c5b;
+    color: white;
+}
+
+.swal-confirm-btn:hover {
+    background-color: #005a4d;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.swal-cancel-btn {
+    background-color: #f1f1f1;
+    color: #333;
+}
+
+.swal-cancel-btn:hover {
+    background-color: #e0e0e0;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
 /* Botão de remoção de foto */
 .btn-remove {
     background-color: #e53935 !important;
