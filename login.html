@@ -160,7 +160,9 @@
                     if (!snap.empty) {
                         await setDoc(doc(db, 'people', snap.docs[0].id), { mustChangePassword: true }, { merge: true });
                     }
-                    await sendPasswordResetEmail(auth, email.trim());
+                    const cleanEmail = email.trim().toLowerCase();
+                    console.log('Enviando reset para:', cleanEmail);
+                    await sendPasswordResetEmail(auth, cleanEmail);
                     await Swal.fire('E-mail enviado', 'Verifique sua caixa de entrada e siga as instruções para redefinir sua senha.', 'success');
                 } catch (err) {
                     Swal.fire('Erro', 'Não foi possível enviar o e-mail de redefinição. Verifique se o e-mail está correto e cadastrado.', 'error');
@@ -184,39 +186,7 @@
                     // Buscar senha temporária em people
                     const q = query(collection(db, 'people'), where('email', '==', email));
                     const snap = await getDocs(q);
-                    let mustChangePassword = false;
-                    if (!snap.empty) {
-                        mustChangePassword = !!snap.docs[0].data().mustChangePassword;
-                    }
                     const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                    // Se mustChangePassword=true, forçar troca
-                    if (mustChangePassword) {
-                        let novaSenha = '';
-                        while (true) {
-                            const { value: nova } = await Swal.fire({
-                                title: 'Troca de Senha Obrigatória',
-                                input: 'password',
-                                inputLabel: 'Digite uma nova senha forte',
-                                inputPlaceholder: 'Nova senha',
-                                showCancelButton: false,
-                                confirmButtonText: 'Trocar',
-                                inputValidator: v => {
-                                    const strongPassword = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
-                                    if (!v) return 'Digite a nova senha';
-                                    if (!strongPassword.test(v)) return 'Senha fraca. Use 8+ caracteres, maiúscula, minúscula, número e especial.';
-                                    return undefined;
-                                }
-                            });
-                            if (nova) {
-                                novaSenha = nova;
-                                break;
-                            }
-                        }
-                        // Atualizar senha no Auth e limpar flag em people
-                        await userCredential.user.updatePassword(novaSenha);
-                        await setDoc(doc(db, 'people', snap.docs[0].id), { mustChangePassword: false }, { merge: true });
-                        await Swal.fire('Senha alterada', 'Sua senha foi atualizada com sucesso!', 'success');
-                    }
                     window.location.href = 'index.html';
                 } catch (error) {
                     loginError.textContent = 'E-mail ou senha inválidos.';

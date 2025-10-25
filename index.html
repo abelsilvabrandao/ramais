@@ -110,21 +110,25 @@
                     <i class="fas fa-bars"></i>
                 </button>
                 <div id="menu-dropdown" class="menu-dropdown">
-                    <a href="editar-foto.html" class="update-ramal-icon" title="Atualização Ramal">
-                        <img src="atualizacaoramal.png" alt="Atualização Ramal" />
+                    <button class="login-icon" id="loginMenuOption" title="Entrar no Chat">
+                        <img src="chat.png" alt="Chat" />
+                        <span>Entrar no Chat</span>
+                    </button>
+                    <button class="login-icon" id="estilizarRamalBtn" title="Estilizar Ramal">
+                        <img src="atualizacaoramal.png" alt="Estilizar Ramal" />
                         <span>Estilizar Ramal</span>
-                    </a>
+                    </button>
                     <button class="login-icon" onclick="redirectToLogin()" title="Acessar Gerenciamento">
                         <img src="admin.png" alt="Login" />
-                        <span>Admin</span>
+                        <span>Admin Ramais</span>
                     </button>
-                    <a href="login.html" class="login-icon" title="Entrar no Chat" id="loginMenuOption">
-                        <img src="chat.png" alt="Login" />
-                        <span>Entrar no Chat</span>
-                    </a>
-                    <!-- Botões de status podem ser adicionados aqui -->
+
                     <div class="status-options-menu">
-                        <!-- Exemplo de botões de status -->
+                        <div class="status-collaboration" style="margin: 8px 0; padding: 8px 12px; border-radius: 8px; text-align: center; font-size: 0.9rem; color: #006c5b;">
+                        <i class="fas fa-users" style="margin-right: 5px;"></i>
+                        <strong>Colaboração de Status</strong>
+                    </div>
+                        <!-- Botões de status -->
                         <button class="status-option" data-status="available"><span class="status-emoji">🟢</span>Disponível</button>
                         <button class="status-option" data-status="busy"><span class="status-emoji">🟠</span>Ocupado</button>
                         <button class="status-option" data-status="meeting"><span class="status-emoji">🔴</span>Em reunião</button>
@@ -184,7 +188,8 @@
     <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
-    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+    import { getFirestore, collection, query, where, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+    
     const firebaseConfig = {
         apiKey: "AIzaSyDa_qvmvyVyJVe936hW5QoDtviIrITcvDI",
         authDomain: "ramais-63a73.firebaseapp.com",
@@ -194,50 +199,274 @@
         appId: "1:695161860787:web:98e73e5fc79a5cbb2f76c6",
         measurementId: "G-X3121MPE65"
     };
+    
     const app = initializeApp(firebaseConfig);
     const auth = getAuth();
+    const db = getFirestore(app);
     const loginMenu = document.getElementById('loginMenuOption');
     async function updateMenu(user) {
         if (user) {
-            // Buscar foto do usuário logado
+            console.log('=== DEBUG AVATAR MENU ===');
+            console.log('User UID:', user.uid);
+            console.log('User email:', user.email);
+            
             let photoUrl = "";
-            let initials = "";
+            let initials = "?";
+            
             try {
-                const userDoc = await getDoc(doc(db, 'users', user.uid));
-                if (userDoc.exists()) {
-                    const data = userDoc.data();
-                    photoUrl = data.photoUrl || "";
-                    initials = (data.name || user.email || "?").split(" ").map(n => n[0]).join('').slice(0,2).toUpperCase();
+                const q = db;
+                let docData = null;
+                
+                // Primeiro tenta pelo UID
+                console.log('Searching by UID...');
+                const uidQuery = await getDocs(query(collection(q, 'people'), where('uid', '==', user.uid)));
+                
+                if (!uidQuery.empty) {
+                    docData = uidQuery.docs[0].data();
+                    console.log('User found by UID');
+                } 
+                // Se não encontrou pelo UID, tenta pelo email
+                else if (user.email) {
+                    console.log('User not found by UID, trying by email...');
+                    const emailQuery = await getDocs(query(
+                        collection(q, 'people'), 
+                        where('email', '==', user.email.toLowerCase().trim())
+                    ));
+                    
+                    if (!emailQuery.empty) {
+                        docData = emailQuery.docs[0].data();
+                        console.log('User found by email');
+                        
+                        // Atualiza o UID no documento se for diferente
+                        if (docData.uid !== user.uid) {
+                            console.log('Updating UID in user document');
+                            const docRef = emailQuery.docs[0].ref;
+                            await updateDoc(docRef, { uid: user.uid });
+                        }
+                    }
                 }
-            } catch {}
-            let avatarHtml = photoUrl ? `<img src='${photoUrl}' alt='Sair' style='width:32px;height:32px;border-radius:50%;object-fit:cover;margin-right:8px;'>` : `<div style='width:32px;height:32px;border-radius:50%;background:#e1e8ed;display:inline-flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:bold;color:#006c5b;margin-right:8px;'>${initials}</div>`;
+                
+                if (docData) {
+                    console.log('User data:', docData);
+                    
+                    if (docData.photoBase64) {
+                        console.log('Using photoBase64');
+                        photoUrl = docData.photoBase64;
+                    } else if (docData.photoUrl) {
+                        console.log('Using photoUrl:', docData.photoUrl);
+                        photoUrl = docData.photoUrl;
+                    } else {
+                        console.log('No photo found, using initials');
+                    }
+                    
+                    // Usar o nome do documento se existir, senão usar o email do usuário
+                    const displayName = (docData.name && docData.name.trim()) || user.email || '';
+                    console.log('Using name/email for initials:', displayName);
+                    
+                    // Gerar iniciais a partir do nome/email
+                    initials = displayName
+                        .split(/\s|@/)
+                        .filter(Boolean)
+                        .map(n => n[0])
+                        .join('')
+                        .slice(0, 2)
+                        .toUpperCase();
+                        
+                    console.log('Generated initials:', initials);
+                } else {
+                    console.log('User not found in people collection');
+                    initials = (user.email || '?')
+                        .split(/\s|@/)
+                        .filter(Boolean)
+                        .map(n => n[0])
+                        .join('')
+                        .slice(0, 2)
+                        .toUpperCase();
+                }
+            } catch (error) {
+                console.error('Error updating menu:', error);
+            }
+            let avatarHtml = photoUrl ? 
+                `<div class="user-avatar-container" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; overflow: hidden; margin-right: 8px; transition: all 0.3s ease;">
+                    <img src='${photoUrl}' alt='Sair' class='user-avatar' style='width:100%;height:100%;object-fit:cover;transition: transform 0.3s ease;'>
+                </div>` : 
+                `<div class="user-avatar-container" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: #e1e8ed; margin-right: 8px; transition: all 0.3s ease;">
+                    <div class="user-initials" style="font-size: 1.1rem; font-weight: bold; color: #006c5b; transition: transform 0.3s ease;">${initials}</div>
+                </div>`;
             loginMenu.innerHTML = `${avatarHtml}<span>Sair</span>`;
-            loginMenu.href = "#";
+            
+            // Adiciona o efeito hover ao avatar
+            const avatarContainer = loginMenu.querySelector('.user-avatar-container');
+            const avatar = loginMenu.querySelector('.user-avatar, .user-initials');
+            
+            if (avatarContainer) {
+                loginMenu.style.display = 'flex';
+                loginMenu.style.alignItems = 'center';
+                loginMenu.style.gap = '8px';
+                
+                loginMenu.addEventListener('mouseenter', () => {
+                    if (avatar) {
+                        avatar.style.transform = 'scale(1.1)';
+                    }
+                    avatarContainer.style.boxShadow = '0 0 0 3px rgba(0, 108, 91, 0.2)';
+                });
+                
+                loginMenu.addEventListener('mouseleave', () => {
+                    if (avatar) {
+                        avatar.style.transform = 'scale(1)';
+                    }
+                    avatarContainer.style.boxShadow = 'none';
+                });
+                
+                // Adiciona efeito de clique
+                loginMenu.addEventListener('mousedown', () => {
+                    avatarContainer.style.transform = 'scale(0.95)';
+                });
+                
+                loginMenu.addEventListener('mouseup', () => {
+                    avatarContainer.style.transform = 'scale(1)';
+                });
+                
+                loginMenu.addEventListener('mouseleave', () => {
+                    avatarContainer.style.transform = 'scale(1)';
+                });
+            }
             loginMenu.onclick = (e) => {
                 e.preventDefault();
+                e.stopPropagation(); // Impede a propagação do evento
                 signOut(auth).then(() => window.location.reload());
+                return false; // Previne qualquer outro comportamento padrão
             };
 
             // Exibir botões de chat
             document.querySelectorAll('.btn-chat').forEach(btn => btn.style.display = 'inline-flex');
         } else {
-            loginMenu.innerHTML = `<img src="chat.png" alt="Login" /><span>Entrar no Chat</span>`;
-            loginMenu.href = "login.html";
-            loginMenu.onclick = null;
+loginMenu.innerHTML = `<img src="chat.png" alt="Login" /><span>Entrar no Chat</span>`;
             // Esconder botões de chat
             document.querySelectorAll('.btn-chat').forEach(btn => btn.style.display = 'none');
         }
     }
     onAuthStateChanged(auth, updateMenu);
+    
+    // Adiciona o evento de clique para o botão de chat
+    // Função para mostrar instruções e redirecionar para editar-foto.html
+    function handleEstilizarRamal() {
+        Swal.fire({
+            title: 'Estilizar Ramal',
+            html: `
+                <div style="text-align: left; padding: 0 10px;">
+                    <p><b>Personalize seu perfil:</b></p>
+                    <ul>
+                        <li>📸 <b>Foto de perfil:</b> Adicione uma foto ou use suas iniciais</li>
+                        <li>🔄 <b>Atualize seu status</b> para refletir sua disponibilidade</li>
+                        <li>👤 <b>Seu nome</b> será exibido junto com sua foto</li>
+                    </ul>
+                    <p>Você pode alterar essas configurações a qualquer momento.</p>
+                </div>
+            `,
+            icon: 'info',
+            confirmButtonText: 'Entendi, vamos lá!',
+            confirmButtonColor: '#006c5b',
+            showCancelButton: false,
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            allowEnterKey: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = 'editar-foto.html';
+            }
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         // Garante que chat está oculto inicialmente
         document.querySelectorAll('.btn-chat').forEach(btn => btn.style.display = 'none');
+        
+        // Adiciona o evento de clique para o botão Estilizar Ramal
+        const estilizarRamalBtn = document.getElementById('estilizarRamalBtn');
+        if (estilizarRamalBtn) {
+            estilizarRamalBtn.addEventListener('click', handleEstilizarRamal);
+        }
+        
+        // Adiciona o evento de clique para o botão de chat
+        const loginMenuOption = document.getElementById('loginMenuOption');
+        if (loginMenuOption) {
+            loginMenuOption.addEventListener('click', (e) => {
+                e.preventDefault();
+                
+                Swal.fire({
+                    html: `
+                        <div style="text-align: center; max-width: 420px; margin: 0 auto;">
+                            <div style="background: #f0f9f8; border-radius: 14px; padding: 20px; margin-bottom: 20px;">
+                                <div style="background: #e1f5f3; width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
+                                    <i class="fas fa-comments" style="font-size: 32px; color: #006c5b;"></i>
+                                </div>
+                                <h3 style="color: #006c5b; margin: 10px 0 15px; font-size: 1.2rem;">Bem-vindo ao Chat iRamais</h3>
+                                <p style="color: #4a4a4a; margin-bottom: 20px; line-height: 1.5;">Conecte-se com sua equipe de forma rápida e segura</p>
+                            </div>
+                            
+                            <div style="background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 12px rgba(0,0,0,0.08);">
+                                <h4 style="color: #333; margin: 0 0 15px 0; font-size: 1rem; font-weight: 600;">Recursos disponíveis:</h4>
+                                <ul style="padding-left: 20px; margin: 0 0 20px 0; text-align: left;">
+                                    <li style="margin-bottom: 10px; color: #555; display: flex; align-items: flex-start;">
+                                        <i class="fas fa-user-friends" style="color: #006c5b; margin-right: 8px; margin-top: 3px;"></i>
+                                        <span>Mensagens individuais e em grupo</span>
+                                    </li>
+                                    <li style="margin-bottom: 10px; color: #555; display: flex; align-items: flex-start;">
+                                        <i class="fas fa-users" style="color: #006c5b; margin-right: 8px; margin-top: 3px;"></i>
+                                        <span>Grupos de trabalho por departamento</span>
+                                    </li>
+                                    <li style="margin-bottom: 10px; color: #555; display: flex; align-items: flex-start;">
+                                        <i class="fas fa-paperclip" style="color: #006c5b; margin-right: 8px; margin-top: 3px;"></i>
+                                        <span>Compartilhamento de arquivos*</span>
+                                    </li>
+                                    <li style="color: #555; display: flex; align-items: flex-start;">
+                                        <i class="fas fa-bell" style="color: #006c5b; margin-right: 8px; margin-top: 3px;"></i>
+                                        <span>Notificações em tempo real</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            
+                            <p style="color: #666; font-size: 0.85rem; margin: 20px 0 0; font-style: italic;">Utilize suas credenciais de acesso para começar</p>
+                        </div>
+                    `,
+                    showConfirmButton: true,
+                    confirmButtonText: 'Acessar o Chat',
+                    confirmButtonColor: '#006c5b',
+                    customClass: {
+                        container: 'swal2-chat-modal',
+                        confirmButton: 'swal2-chat-confirm',
+                        cancelButton: 'swal2-chat-cancel',
+                        popup: 'swal2-chat-popup',
+                        title: 'swal2-chat-title',
+                        htmlContainer: 'swal2-chat-html'
+                    },
+                    showCancelButton: true,
+                    cancelButtonText: 'Mais tarde',
+                    focusConfirm: false,
+                    allowOutsideClick: false,
+                    buttonsStyling: true,
+                    showClass: {
+                        popup: 'swal2-show',
+                        backdrop: 'swal2-backdrop-show',
+                        icon: 'swal2-icon-show'
+                    },
+                    hideClass: {
+                        popup: 'swal2-hide',
+                        backdrop: 'swal2-backdrop-hide',
+                        icon: 'swal2-icon-hide'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = 'login.html';
+                    }
+                });
+            });
+        }
     });
     </script>
 <script type="module">
-import { getFirestore, collection, query, where, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
-import { getApps } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-const db = getFirestore(getApps()[0]);
+// Reusing the existing Firebase app and db instances from above
 
 function getStatusName(status) {
     return {
@@ -430,85 +659,7 @@ if (menuToggle && menuDropdown) {
 });
 
 // Estilos customizados para o modal de login
-const loginModalStyle = document.createElement('style');
-loginModalStyle.innerHTML = `
-.swal2-login-modal {
-    border-radius: 18px !important;
-    padding: 0 !important;
-    box-shadow: 0 6px 32px 0 #006c5b22 !important;
-}
-.swal2-login-confirm {
-    background: #006c5b !important;
-    color: #fff !important;
-    border-radius: 12px !important;
-    font-size: 1.1rem !important;
-    font-weight: 600 !important;
-    border: none !important;
-    box-shadow: 0 2px 8px #006c5b22 !important;
-    padding: 12px 32px !important;
-    margin-left: 22px !important;
-    margin-right: 0 !important;
-    margin-bottom: 0 !important;
-    transition: background 0.2s;
-}
-.swal2-login-confirm:hover {
-    background: #00937e !important;
-}
-.swal2-login-cancel {
-    background: #f4f4f4 !important;
-    color: #006c5b !important;
-    border-radius: 12px !important;
-    font-size: 1.05rem !important;
-    font-weight: 500 !important;
-    border: none !important;
-    box-shadow: none !important;
-    padding: 12px 32px !important;
-    margin-right: 22px !important;
-    margin-left: 0 !important;
-    margin-bottom: 0 !important;
-    transition: background 0.2s;
-}
-.swal2-actions {
-    margin-top: 26px !important;
-    gap: 26px !important;
-    justify-content: center !important;
-}
-.swal2-login-modal .swal2-actions {
-    margin-bottom: 18px !important;
-}
-.swal2-login-modal .swal2-html-container {
-    margin-bottom: 26px !important;
-}
-.swal2-login-cancel:hover {
-    background: #e6f7f4 !important;
-}
-.swal2-input, .login-input-align {
-    border-radius: 18px !important;
-    border: 1.5px solid #006c5b !important;
-    font-size: 1.09rem !important;
-    font-family: inherit;
-    color: #222 !important;
-    background: #f9f9f9 !important;
-    box-shadow: none !important;
-    width: 100% !important;
-    max-width: 420px !important;
-    margin: 0 auto 0 auto !important;
-    display: block !important;
-    text-align: left !important;
-}
-.swal2-login-modal .swal2-html-container > div {
-    width: 100% !important;
-    max-width: 420px !important;
-    margin: 0 auto !important;
-}
-.swal2-login-modal .swal2-html-container {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-}
-
-`;
-document.head.appendChild(loginModalStyle);
+// Estilos movidos para stylesusuario.css
 
         }
     </script>
