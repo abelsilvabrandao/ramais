@@ -1,0 +1,379 @@
+/* ===== ESTILOS DO CHAT ===== */
+
+/* Container principal do chat */
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 8px 40px 0 rgba(0, 108, 91, 0.15);
+    overflow: hidden;
+    border: 1px solid rgba(0, 108, 91, 0.1);
+}
+
+/* Cabeçalho do chat */
+.chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: #006c5b;
+    color: white;
+}
+
+/* Avatar do contato */
+.chat-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #e0e0e0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+    overflow: hidden;
+}
+
+.chat-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.chat-avatar .initials {
+    color: #666;
+    font-weight: 600;
+    font-size: 18px;
+}
+
+/* Informações do contato no cabeçalho */
+.chat-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.chat-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 4px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chat-subtitle {
+    font-size: 13px;
+    color: #666;
+    margin: 0;
+    display: flex;
+    align-items: center;
+}
+
+/* Lista de conversas */
+.chat-list, .contacts-list, .groups-list {
+    padding: 8px 0;
+    height: 100%;
+    overflow-y: auto;
+}
+
+/* Itens da lista de conversas */
+.chat-item, .contact-item, .group-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: background 0.2s;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.chat-item:hover, .contact-item:hover, .group-item:hover {
+    background: #f5f5f5;
+}
+
+/* Estilo para o avatar na lista de conversas */
+.chat-item .chat-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin-right: 12px;
+    flex-shrink: 0;
+    position: relative;
+    background: #e0e0e0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chat-item .chat-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.chat-item .chat-avatar .avatar-initials {
+    font-size: 20px;
+    font-weight: 600;
+    color: #555;
+    text-transform: uppercase;
+}
+
+/* Estilo para as informações da conversa */
+.chat-item .chat-info {
+    flex: 1;
+    min-width: 0;
+    padding-right: 10px;
+}
+
+.chat-item .chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.chat-item .chat-name {
+    font-weight: 600;
+    color: #333;
+    font-size: 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin: 0;
+}
+
+.chat-item .chat-time {
+    font-size: 12px;
+    color: #999;
+    white-space: nowrap;
+    margin-left: 8px;
+}
+
+.chat-item .chat-preview {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.chat-item .chat-last-message {
+    font-size: 13px;
+    color: #666;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    margin-right: 8px;
+}
+
+/* Badge de mensagens não lidas */
+.chat-item .unread-badge {
+    background: #e74c3c;
+    color: white;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    min-width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 6px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Badge de grupo */
+.chat-item .group-badge {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    background: #006c5b;
+    color: white;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Área de mensagens */
+.messages-container {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Estilos para mensagens individuais */
+.message {
+    max-width: 70%;
+    padding: 10px 14px;
+    border-radius: 18px;
+    margin-bottom: 8px;
+    position: relative;
+    word-wrap: break-word;
+    line-height: 1.4;
+}
+
+/* Mensagens recebidas */
+.message.received {
+    background: #f0f9f7;
+    color: #333;
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+    border: 1px solid #e0f2f1;
+}
+
+/* Mensagens enviadas */
+.message.sent {
+    background: linear-gradient(135deg, #006c5b 0%, #009688 100%);
+    color: white;
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 108, 91, 0.15);
+}
+
+/* Rodapé do chat (área de digitação) */
+.chat-footer {
+    padding: 12px 16px;
+    border-top: 1px solid #eee;
+    background: #f9f9f9;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Campo de entrada de mensagem */
+.message-input {
+    flex: 1;
+    border: 1px solid #e0e0e0;
+    border-radius: 24px;
+    padding: 10px 20px;
+    font-size: 14px;
+    outline: none;
+    resize: none;
+    min-height: 44px;
+    max-height: 120px;
+    line-height: 1.5;
+    transition: all 0.2s ease;
+    background: #f8f9fa;
+}
+
+.message-input:focus {
+    border-color: #006c5b;
+    box-shadow: 0 0 0 2px rgba(0, 108, 91, 0.1);
+    background: #fff;
+}
+
+/* Botão de enviar */
+.send-button {
+    background: #006c5b;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(0, 108, 91, 0.2);
+}
+
+.send-button:hover {
+    background: #00897b;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 108, 91, 0.3);
+}
+
+/* Status online/offline */
+.status-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+}
+
+.status-online {
+    background: #4caf50;
+}
+
+.status-offline {
+    background: #ccc;
+}
+
+/* Estilo para quando não há mensagens */
+.no-messages {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #999;
+    text-align: center;
+    padding: 20px;
+}
+
+.no-messages i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.no-messages p {
+    margin: 4px 0;
+}
+
+.no-messages .hint {
+    font-size: 13px;
+    color: #aaa;
+}
+
+/* Ajustes para responsividade */
+@media (max-width: 768px) {
+    .chat-container {
+        border-radius: 0;
+        height: 100vh;
+    }
+    
+    .message {
+        max-width: 80%;
+    }
+}
+
+/* Animações */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.message {
+    animation: fadeIn 0.2s ease-out;
+}
+
+/* Barra de rolagem personalizada */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}

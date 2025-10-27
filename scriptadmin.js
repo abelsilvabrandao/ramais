@@ -35,16 +35,38 @@ async function fetchPeople() {
             loadingElement.style.display = 'none';
         }, 3000); 
 
-        onSnapshot(peopleCollection, (snapshot) => {
-            people = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            console.log('Pessoas carregadas:', people);  
-            updateTotalPeopleCount(); // Atualiza a contagem de pessoas
+        // Armazena a referência para o listener
+        const unsubscribe = onSnapshot(peopleCollection, (snapshot) => {
+            people = snapshot.docs.map(doc => ({ 
+                id: doc.id, 
+                ...doc.data(),
+                // Garante que os campos estejam definidos para evitar erros
+                name: doc.data().name || '',
+                email: doc.data().email || '',
+                unit: doc.data().unit || '',
+                sector: doc.data().sector || '',
+                extension: doc.data().extension || '',
+                photoBase64: doc.data().photoBase64 || '',
+                photoUrl: doc.data().photoUrl || ''
+            }));
+            
+            console.log('Pessoas carregadas:', people);
+            
+            // Atualiza a UI com os dados mais recentes
+            renderFilteredPeopleList(people);
+            updateTotalPeopleCount();
+            
             clearTimeout(loadingTimeout); 
-            loadingElement.style.display = 'none';            
+            loadingElement.style.display = 'none';
         });
+        
+        // Retorna a função de unsubscribe para limpeza
+        return unsubscribe;
+        
     } catch (error) {
         console.error('Erro ao buscar pessoas:', error);
-        loadingElement.style.display = 'none'; 
+        loadingElement.style.display = 'none';
+        throw error; // Propaga o erro para quem chamou a função
     }
 }
 
@@ -73,13 +95,31 @@ async function fetchSectors() {
     });
 }
 
-
-
 // Chamar funções de busca no carregamento
 document.addEventListener('DOMContentLoaded', function() {
-    fetchPeople(); // Carrega pessoas do Firestore
-    fetchUnits();  // Carrega unidades do Firestore
-    fetchSectors(); // Carrega setores do Firestore
+    // Inicializa o listener em tempo real para as pessoas
+    let unsubscribePeople = null;
+    
+    async function initializeApp() {
+        try {
+            // Inicia os listeners em paralelo para melhor performance
+            const [unsubPeople] = await Promise.all([
+                fetchPeople(),
+                fetchUnits(),
+                fetchSectors()
+            ]);
+            
+            // Armazena a função de unsubscribe para limpeza posterior se necessário
+            unsubscribePeople = unsubPeople;
+            
+        } catch (error) {
+            console.error('Erro ao inicializar a aplicação:', error);
+            Swal.fire('Erro', 'Não foi possível carregar os dados. Por favor, recarregue a página.', 'error');
+        }
+    }
+    
+    // Inicializa o aplicativo
+    initializeApp();
 });
 
 // Funções para popular seletores de unidades e setores
@@ -137,39 +177,29 @@ function populateSectorList() {
     });
 }
 
-// script PARA OS BOTÕES ADICIONAR UNIDADE, ADICIONAR PESSOA
-document.addEventListener('DOMContentLoaded', function() {
-    const addUnitSectorButton = document.getElementById('addUnitSectorButton');
-    const addPersonButton = document.getElementById('addPersonButton');
-    const closeManageUnitSectorModal = document.getElementById('closeManageUnitSectorModal');
-    const closeAddPersonModal = document.getElementById('closeAddPersonModal');
-
-    // Função para abrir o modal
-    function openModal(modalId) {
-        const modal = document.getElementById(modalId);
-        if (modal) {
-            modal.style.display = 'block'; // Exibe o modal
-        }
+// Função para abrir o modal
+function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'block';
+        // Adiciona a classe 'modal-open' ao body para estilizações adicionais
+        document.body.classList.add('modal-open');
     }
-    window.openModal = openModal;
+}
 
-    // Função para fechar o modal
-    function closeModal(modalId) {
-        const modal = document.getElementById(modalId);
-        if (modal) {
-            modal.style.display = 'none'; // Oculta o modal
-        }
+// Função para fechar o modal
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'none';
+        // Remove a classe 'modal-open' do body
+        document.body.classList.remove('modal-open');
     }
+}
 
-    // Adiciona evento de clique para o botão de Cadastrar Unidade/Setor
-    addUnitSectorButton.addEventListener('click', function() {
-        openModal('manageUnitSectorModal'); // Abre o modal de gerenciar unidades e setores
-    });
-
-    // Adiciona evento de clique para o botão de Adicionar Pessoa
-    addPersonButton.addEventListener('click', function() {
-        openModal('addPersonModal'); // Abre o modal de adicionar pessoa
-    });
+// Torna as funções disponíveis globalmente
+window.openModal = openModal;
+window.closeModal = closeModal;
 
     // Adiciona evento de clique para fechar o modal de gerenciar unidades e setores
     closeManageUnitSectorModal.addEventListener('click', function() {
@@ -193,7 +223,6 @@ document.addEventListener('DOMContentLoaded', function() {
             closeModal('addPersonModal');
         }
     });
-});
 
 //Evento de clique botão Salvar
 document.getElementById('saveUnitButton').addEventListener('click', async function() {
@@ -480,12 +509,6 @@ function clearSectorModal() {
     document.getElementById('selectUnitForSector').value = '';
 }
 
-document.getElementById('addPersonButton').addEventListener('click', function() {
-    console.log('Botão Adicionar Pessoa clicado'); // Adicione esta linha
-    openModal('addPersonModal'); // Abre o modal de adicionar pessoa
-    clearPersonModal(); // Limpa os campos do modal
-});
-
 // Função para limpar o modal de pessoa
 let currentPhotoBase64 = '';
 
@@ -549,15 +572,30 @@ async function addOrUpdatePerson() {
         if (editIndex) {
             const personDoc = doc(db, 'people', editIndex);
             await updateDoc(personDoc, person);
-            Swal.fire('Atualizado!', 'Pessoa atualizada com sucesso!', 'success');
+            // Não é necessário buscar novamente, o onSnapshot já vai atualizar a UI
+            Swal.fire({
+                title: 'Atualizado!',
+                text: 'Pessoa atualizada com sucesso!',
+                icon: 'success',
+                didClose: () => {
+                    closeModal('addPersonModal');
+                }
+            });
         } else {
             await addDoc(collection(db, 'people'), person);
-            Swal.fire('Adicionado!', 'Pessoa adicionada com sucesso!', 'success');
+            // Não é necessário buscar novamente, o onSnapshot já vai atualizar a UI
+            Swal.fire({
+                title: 'Adicionado!',
+                text: 'Pessoa adicionada com sucesso!',
+                icon: 'success',
+                didClose: () => {
+                    closeModal('addPersonModal');
+                }
+            });
         }
-
-        // Atualiza a lista de pessoas após a operação
-        await fetchPeople(); // Chama a função para buscar pessoas novamente
-        clearPersonModal(); // Limpa os campos do modal
+        
+        // Limpa o modal
+        clearPersonModal();
 
     } catch (error) {
         console.error('Erro ao adicionar ou atualizar pessoa:', error);
@@ -756,7 +794,46 @@ function filterList() {
 }
 
 // Evento para limpar busca e filtros
+// Configuração dos eventos de clique para os botões
 document.addEventListener('DOMContentLoaded', function() {
+    // Configura o botão de adicionar pessoa
+    const addPersonButton = document.getElementById('addPersonButton');
+    if (addPersonButton) {
+        addPersonButton.addEventListener('click', function() {
+            console.log('Botão Adicionar Pessoa clicado');
+            openModal('addPersonModal');
+            clearPersonModal();
+        });
+    }
+
+    // Configura o botão de gerenciar unidade/setor
+    const addUnitSectorButton = document.getElementById('addUnitSectorButton');
+    if (addUnitSectorButton) {
+        addUnitSectorButton.addEventListener('click', function() {
+            console.log('Botão Gerenciar Unidade/Setor clicado');
+            openModal('manageUnitSectorModal');
+        });
+    }
+
+    // Configura os botões de fechar modal
+    const closeButtons = document.querySelectorAll('.close-modal');
+    closeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const modal = this.closest('.modal');
+            if (modal) {
+                closeModal(modal.id);
+            }
+        });
+    });
+
+    // Configura o clique fora do modal para fechar
+    window.addEventListener('click', function(event) {
+        if (event.target.classList.contains('modal')) {
+            closeModal(event.target.id);
+        }
+    });
+
+    // Configuração dos filtros de busca
     const nameInput = document.getElementById('nameSearch');
     const sectorSelect = document.getElementById('sectorSearch');
     const unitSelect = document.getElementById('filtro-unidade');

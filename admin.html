@@ -7,6 +7,9 @@
     <link rel="stylesheet" href="stylesusuario.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+    <script src="scriptadmin.js" type="module"></script>
+    <script src="chat.js" type="module"></script>
     <title>Gestão de Ramais</title>
 <style>
 .peopleTable .person-name-cell {
@@ -257,6 +260,85 @@
 </style>
 
     <script type="module" src="scriptadmin.js"></script>
+    <script src="chat.js" type="module"></script>
+    
+    <!-- Botão de Chat Flutuante -->
+    <button id="chatButton" class="chat-button">
+        <i class="fas fa-comment-dots"></i>
+        <span id="unreadCount" class="unread-count">0</span>
+    </button>
+
+    <!-- Modal do Chat -->
+    <div id="chatModal" class="chat-modal">
+        <div class="chat-header">
+            <div class="chat-tabs">
+                <button class="tab-button active" onclick="switchTab('chats')">Conversas</button>
+                <button class="tab-button" onclick="switchTab('contacts')">Contatos</button>
+            </div>
+            <button class="close-button" onclick="toggleChatModal()">&times;</button>
+        </div>
+        
+        <div class="chat-content">
+            <!-- Aba de Conversas -->
+            <div id="chatsTab" class="tab-content active">
+                <div id="chatsList" class="chats-list">
+                    <!-- As conversas serão carregadas aqui -->
+                </div>
+            </div>
+            
+            <!-- Aba de Contatos -->
+            <div id="contactsTab" class="tab-content">
+                <div class="search-box">
+                    <input type="text" id="contactSearch" placeholder="Buscar contatos...">
+                </div>
+                <div id="contactsList" class="contacts-list">
+                    <!-- Os contatos serão carregados aqui -->
+                </div>
+            </div>
+            
+            <!-- Visualização da Conversa -->
+            <div id="chatView" class="chat-view" style="display: none;">
+                <div class="chat-header">
+                    <button class="back-button" onclick="backToChats()">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <div class="chat-user-info">
+                        <div class="chat-user-avatar" id="chatUserAvatar">
+                            <span id="chatUserInitials"></span>
+                        </div>
+                        <div class="chat-user-name" id="chatUserName"></div>
+                    </div>
+                </div>
+                <div id="messagesContainer" class="messages-container">
+                    <!-- As mensagens serão carregadas aqui -->
+                </div>
+                <div class="message-input-container">
+                    <input type="text" id="messageInput" placeholder="Digite sua mensagem...">
+                    <button id="sendButton" onclick="sendMessage()">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de Novo Grupo -->
+    <div id="newGroupModal" class="modal">
+        <div class="modal-content">
+            <h2>Novo Grupo</h2>
+            <div class="form-group">
+                <input type="text" id="groupName" placeholder="Nome do Grupo" class="modal-input">
+            </div>
+            <div id="groupMembersList" class="group-members-list">
+                <!-- Membros do grupo serão listados aqui -->
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn secondary" onclick="closeNewGroupModal()">Cancelar</button>
+                <button class="modal-btn primary" onclick="createGroup()">Criar Grupo</button>
+            </div>
+        </div>
+    </div>
+
 <footer class="main-footer">
   <div class="footer-content">
     <div>© 2025 Intermarítima. Todos os direitos reservados.</div>

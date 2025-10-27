@@ -22,6 +22,7 @@
     <link rel="icon" type="image/png" sizes="192x192" href="icons/android/android-launchericon-192-192.png">
     <link rel="apple-touch-icon" sizes="180x180" href="icons/ios/180.png">
     <link rel="stylesheet" href="stylesusuario.css">
+    <link rel="stylesheet" href="chat.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -113,6 +114,10 @@
                     <button class="login-icon" id="loginMenuOption" title="Entrar no Chat">
                         <img src="chat.png" alt="Chat" />
                         <span>Entrar no Chat</span>
+                    </button>
+                    <button class="login-icon" id="logoutButton" title="Sair" style="display: none;">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Sair</span>
                     </button>
                     <button class="login-icon" id="estilizarRamalBtn" title="Estilizar Ramal">
                         <img src="atualizacaoramal.png" alt="Estilizar Ramal" />
@@ -303,9 +308,7 @@
                     const peopleData = querySnapshot.docs[0].data();
                     // Tenta obter o nome do campo 'name' ou 'nome'
                     userName = peopleData.name || peopleData.nome || userName;
-                    console.log('Dados do usuário encontrados:', peopleData);
                 } else {
-                    console.log('Nenhum documento encontrado para o email:', user.email);
                 }
             } catch (error) {
                 console.error('Erro ao buscar dados do usuário na coleção people:', error);
@@ -326,14 +329,35 @@
                 `;
             }
             
-            // Estrutura com nome em cima e 'Sair do Chat' embaixo
+            // Estrutura com nome do usuário e status do chat
             loginMenu.innerHTML = `
                 ${avatarHtml}
                 <div style="display: flex; flex-direction: column; align-items: flex-start; line-height: 1.2;">
                     <strong style="font-size: 0.9rem; color: #333;">${userName}</strong>
-                    <span style="font-size: 0.8rem; color: #666; cursor: pointer;">Sair do Chat</span>
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                        <span class="online-status" style="display: inline-block; width: 8px; height: 8px; background-color: #4CAF50; border-radius: 50%;"></span>
+                        <span style="font-size: 0.8rem; color: #4CAF50; font-weight: 500; transition: color 0.2s;">Chat Online</span>
+                    </div>
                 </div>
             `;
+            
+            // Adiciona efeito hover para indicar que é clicável
+            loginMenu.style.cursor = 'pointer';
+            loginMenu.addEventListener('mouseenter', () => {
+                const chatText = loginMenu.querySelector('span');
+                if (chatText) {
+                    chatText.style.textDecoration = 'underline';
+                    chatText.style.color = '#2E7D32';
+                }
+            });
+            
+            loginMenu.addEventListener('mouseleave', () => {
+                const chatText = loginMenu.querySelector('span');
+                if (chatText) {
+                    chatText.style.textDecoration = 'none';
+                    chatText.style.color = '#4CAF50';
+                }
+            });
             
             // Adiciona o efeito hover ao avatar
             const avatarContainer = loginMenu.querySelector('.avatar-container');
@@ -368,32 +392,11 @@
                     avatarContainer.style.transform = 'scale(1)';
                 });
             }
-            loginMenu.onclick = async (e) => {
+            // Remove a funcionalidade de clique
+            loginMenu.style.cursor = 'default';
+            loginMenu.onclick = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                
-                const result = await Swal.fire({
-                    title: 'Deseja realmente sair?',
-                    text: 'Você será desconectado do sistema.',
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonColor: '#006c5b',
-                    cancelButtonColor: '#6c757d',
-                    confirmButtonText: 'Sim, sair',
-                    cancelButtonText: 'Cancelar',
-                    reverseButtons: true,
-                    customClass: {
-                        confirmButton: 'swal-confirm-btn',
-                        cancelButton: 'swal-cancel-btn'
-                    },
-                    buttonsStyling: false
-                });
-                
-                if (result.isConfirmed) {
-                    await signOut(auth);
-                    window.location.reload();
-                }
-                
                 return false;
             };
 
@@ -453,6 +456,22 @@ loginMenu.innerHTML = `<img src="chat.png" alt="Login" /><span>Entrar no Chat</s
             loginMenuOption.addEventListener('click', (e) => {
                 e.preventDefault();
                 
+                // Verifica se o usuário está logado
+                const user = auth.currentUser;
+                if (user) {
+                    // Se estiver logado, abre o modal de chat diretamente
+                    const chatModal = document.getElementById('chatModal');
+                    if (chatModal) {
+                        chatModal.classList.add('active');
+                        // Inicializa o chat se necessário
+                        if (typeof initializeChat === 'function') {
+                            initializeChat();
+                        }
+                        return;
+                    }
+                }
+                
+                // Se não estiver logado, mostra o modal de boas-vindas
                 Swal.fire({
                     html: `
                         <div style="text-align: center; max-width: 420px; margin: 0 auto;">
@@ -463,7 +482,6 @@ loginMenu.innerHTML = `<img src="chat.png" alt="Login" /><span>Entrar no Chat</s
                                 <h3 style="color: #006c5b; margin: 10px 0 15px; font-size: 1.2rem;">Bem-vindo ao Chat iRamais</h3>
                                 <p style="color: #4a4a4a; margin-bottom: 20px; line-height: 1.5;">Conecte-se com sua equipe de forma rápida e segura</p>
                             </div>
-                            
                             <div style="background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 12px rgba(0,0,0,0.08);">
                                 <h4 style="color: #333; margin: 0 0 15px 0; font-size: 1rem; font-weight: 600;">Recursos disponíveis:</h4>
                                 <ul style="padding-left: 20px; margin: 0 0 20px 0; text-align: left;">
@@ -723,6 +741,138 @@ if (menuToggle && menuDropdown) {
         }
     </script>
     
+<!-- Botão flutuante de chat -->
+<div id="chatButton" class="chat-button">
+    <i class="fas fa-comments"></i>
+    <span class="unread-badge" id="unreadMessagesBadge">0</span>
+</div>
+
+<!-- Modal de Chat -->
+<div id="chatModal" class="chat-modal">
+    <div class="chat-header">
+        <div class="chat-header-tabs">
+            <button class="tab-button active" data-tab="chats">Conversas</button>
+            <button class="tab-button" data-tab="contacts">Contatos</button>
+            <button class="tab-button" data-tab="groups">Grupos</button>
+        </div>
+        <button class="close-chat">&times;</button>
+    </div>
+    
+    <div class="chat-search">
+        <input type="text" id="chatSearch" placeholder="Buscar conversas, contatos...">
+        <i class="fas fa-search"></i>
+    </div>
+    
+    <div class="chat-content">
+        <!-- Aba de Conversas -->
+        <div id="chatsTab" class="tab-content active">
+            <div class="chat-list" id="chatList">
+                <!-- Lista de conversas será preenchida via JavaScript -->
+                <div class="no-chats">
+                    <i class="fas fa-comment-slash"></i>
+                    <p>Nenhuma conversa recente</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Aba de Contatos -->
+        <div id="contactsTab" class="tab-content">
+            <div class="contacts-list" id="contactsList">
+                <!-- Lista de contatos será preenchida via JavaScript -->
+                <div class="loading-contacts">
+                    <div class="spinner"></div>
+                    <p>Carregando contatos...</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Aba de Grupos -->
+        <div id="groupsTab" class="tab-content">
+            <div class="groups-actions">
+                <button id="createGroupBtn" class="btn-primary">
+                    <i class="fas fa-plus"></i> Novo Grupo
+                </button>
+            </div>
+            <div class="groups-list" id="groupsList">
+                <!-- Lista de grupos será preenchida via JavaScript -->
+                <div class="no-groups">
+                    <i class="fas fa-users"></i>
+                    <p>Nenhum grupo encontrado</p>
+                    <p class="hint">Crie um grupo para começar a conversar</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="chat-footer">
+        <div class="user-status">
+            <div class="status-indicator online"></div>
+            <span>Online</span>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Conversa -->
+<div id="conversationModal" class="conversation-modal">
+    <div class="conversation-header">
+        <button class="back-to-chats"><i class="fas fa-arrow-left"></i></button>
+        <div class="conversation-info">
+            <div class="conversation-avatar">
+                <span id="conversationAvatar">U</span>
+            </div>
+            <div class="conversation-details">
+                <h3 id="conversationTitle">Usuário</h3>
+                <p class="conversation-status">Online</p>
+            </div>
+        </div>
+        <div class="conversation-actions">
+            <button class="btn-icon" title="Informações"><i class="fas fa-info-circle"></i></button>
+            <button class="btn-icon" title="Mais opções"><i class="fas fa-ellipsis-v"></i></button>
+        </div>
+    </div>
+    
+    <div class="conversation-messages" id="conversationMessages">
+        <!-- Mensagens serão carregadas aqui -->
+        <div class="no-messages">
+            <i class="fas fa-comment-alt"></i>
+            <p>Nenhuma mensagem ainda</p>
+            <p class="hint">Envie uma mensagem para começar a conversa</p>
+        </div>
+    </div>
+    
+    <div class="conversation-input">
+        <button class="btn-icon" title="Anexar arquivo"><i class="fas fa-paperclip"></i></button>
+        <input type="text" id="messageInput" placeholder="Digite uma mensagem...">
+        <button class="btn-icon" id="sendMessageBtn" title="Enviar"><i class="fas fa-paper-plane"></i></button>
+    </div>
+</div>
+
+<!-- Modal de Novo Grupo -->
+<div id="newGroupModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Novo Grupo</h3>
+            <button class="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="groupName">Nome do Grupo</label>
+                <input type="text" id="groupName" placeholder="Digite o nome do grupo">
+            </div>
+            <div class="form-group">
+                <label>Selecione os participantes</label>
+                <div class="participants-list" id="groupParticipants">
+                    <!-- Lista de contatos para seleção -->
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" id="cancelGroupBtn">Cancelar</button>
+            <button class="btn-primary" id="createGroupConfirmBtn">Criar Grupo</button>
+        </div>
+    </div>
+</div>
+
 <button id="btnScrollTop" class="scroll-top-btn" title="Voltar ao topo" style="display:none;"><i class="fas fa-arrow-up"></i></button>
 <style>
 .scroll-top-btn {
@@ -757,6 +907,10 @@ if (menuToggle && menuDropdown) {
     <div>Desenvolvido por <strong>Intermarítima</strong> | Versão 1.5.0</div>
   </div>
 </footer>
+
+<!-- Script do Chat -->
+<script type="module" src="chat.js"></script>
+
 </body>
 </html>
 
