@@ -3608,3 +3608,37 @@ body { padding-bottom: 75px !important; box-sizing: border-box; }
     background-color: #00bcd4;
     box-shadow: 0 0 8px rgba(0, 188, 212, 0.6);
 }
+
+/* Botão de notificações */
+.btn-notification {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: #006c5b;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,108,91,0.2);
+}
+
+.btn-notification:hover {
+    background: #005a4d;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,108,91,0.3);
+}
+
+.btn-notification i {
+    font-size: 1.2em;
+    animation: ring 2s ease-in-out infinite;
+}
+
+@keyframes ring {
+    0%, 100% { transform: rotate(0deg); }
+    10%, 30% { transform: rotate(-10deg); }
+    20%, 40% { transform: rotate(10deg); }
+}

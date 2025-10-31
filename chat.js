@@ -23,6 +23,13 @@ import {
     arrayRemove
 } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
+// 🔔 Importa o sistema de notificações
+import { 
+    initializeNotifications, 
+    requestNotificationPermission,
+    stopNotifications 
+} from './chat-notifications.js';
+
 // Usa a instância do app já configurada
 const auth = getAuth(app);
 
@@ -270,19 +277,12 @@ const chatModal = document.getElementById('chatModal');
 const conversationModal = document.getElementById('conversationModal');
 let chatList = document.getElementById('chatList'); 
 const contactsList = document.getElementById('contactsList');
-const groupsList = document.getElementById('groupsList');
 const messageInput = document.getElementById('messageInput');
 const sendMessageBtn = document.getElementById('sendMessageBtn');
 const conversationMessages = document.getElementById('conversationMessages');
 const unreadMessagesBadge = document.getElementById('unreadMessagesBadge');
 const chatSearch = document.getElementById('chatSearch');
-const createGroupBtn = document.getElementById('createGroupBtn');
-const newGroupModal = document.getElementById('newGroupModal');
-const groupNameInput = document.getElementById('groupName');
-const groupParticipants = document.getElementById('groupParticipants');
-const createGroupConfirmBtn = document.getElementById('createGroupConfirmBtn');
-const cancelGroupBtn = document.getElementById('cancelGroupBtn');
-const closeModalBtn = document.querySelector('.close-modal');
+// Referências a grupos removidas
 
 // Inicialização do chat
 function initChat() {
@@ -373,17 +373,38 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Criar grupo
-    createGroupBtn.addEventListener('click', openNewGroupModal);
-    createGroupConfirmBtn.addEventListener('click', createGroup);
-    cancelGroupBtn.addEventListener('click', closeNewGroupModal);
-    closeModalBtn.addEventListener('click', closeNewGroupModal);
+    // 🔔 Event listener para ativar notificações
+    const enableNotificationsBtn = document.getElementById('enableNotificationsBtn');
+    if (enableNotificationsBtn) {
+        enableNotificationsBtn.addEventListener('click', async () => {
+            const granted = await requestNotificationPermission();
+            if (granted) {
+                alert('✅ Notificações ativadas! Você receberá notificações de novas mensagens.');
+                // Esconde o botão após ativar
+                enableNotificationsBtn.style.display = 'none';
+            } else {
+                alert('⚠️ Permissão negada. Ative notificações nas configurações do navegador.');
+            }
+        });
+        
+        // Esconde o botão se já tiver permissão
+        if (Notification.permission === 'granted') {
+            enableNotificationsBtn.style.display = 'none';
+        }
+    }
+
+    // Event listeners de grupos removidos
 });
 
 // Inicializa o chat
 async function initializeChat() {
     // Atualiza o status do usuário para online
     await updateUserStatus('online');
+    
+    // 🔔 Inicializa o sistema de notificações
+    if (currentUser && currentUser.uid) {
+        await initializeNotifications(db, currentUser.uid);
+    }
     
     // Carrega as conversas
     loadChats();
@@ -574,14 +595,32 @@ async function loadContacts() {
             const isCurrentUser = currentUser && 
                                 (userEmail === currentUser.email?.toLowerCase() || 
                                  userId === currentUser.uid || 
-                                 userId === currentUserId);
+                                 doc.id === currentUser.uid);
             
             // Se for o próprio usuário, não adiciona na lista de contatos
-            if (isCurrentUser) return;
+            if (isCurrentUser) {
+                // Atualiza os dados do usuário atual
+                currentUser = {
+                    ...currentUser,
+                    uid: userId, // Garante que o UID correto seja usado
+                    displayName: userData.name || currentUser.displayName,
+                    photoURL: userData.photoURL || userData.photoBase64 || currentUser.photoURL
+                };
+                return; // Pula para o próximo contato
+            }
+            
+            // Verifica se o contato tem UID válido
+            if (!userId) {
+                console.warn(`Contato ${userData.name || userEmail} não possui UID válido e será ignorado`);
+                return; // Pula contatos sem UID
+            }
+            
+            // Usa o UID do Firebase Auth se disponível, senão usa o ID do documento
+            const contactUid = userData.uid || userId;
             
             const contact = {
-                id: userId,
-                userId: userId, // Usa o ID do documento como ID do usuário
+                id: contactUid, // Usa o UID como ID principal
+                userId: contactUid, // Garante que o UID esteja disponível como userId
                 displayName: userData.name || 'Sem nome',
                 email: userEmail,
                 ramal: userData.extension || userData.ramal || 'Sem ramal',
@@ -859,6 +898,33 @@ function updateChatList(chat) {
     sortChatList();
 }
 
+// Exibe uma notificação para o usuário
+function showNotification(type, title, message) {
+    // Verifica se o SweetAlert2 está disponível
+    if (typeof Swal !== 'undefined') {
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer);
+                toast.addEventListener('mouseleave', Swal.resumeTimer);
+            }
+        });
+        
+        Toast.fire({
+            icon: type,
+            title: title,
+            text: message
+        });
+    } else {
+        // Fallback para alerta padrão se o SweetAlert2 não estiver disponível
+        alert(`${title}: ${message}`);
+    }
+}
+
 // Função auxiliar para formatar o tempo decorrido
 function formatTimeAgo(date) {
     const now = new Date();
@@ -913,11 +979,9 @@ function createChatElement(chat) {
     const participantDetails = chat.participantDetails || {};
     const otherUser = participantDetails[otherParticipantId] || {};
     
-    // Define o nome do chat (nome do contato ou nome do grupo)
+    // Define o nome do chat (nome do contato)
     let chatName = 'Contato';
-    if (chat.isGroup) {
-        chatName = chat.groupName || 'Grupo sem nome';
-    } else if (otherUser && otherUser.name) {
+    if (otherUser && otherUser.name) {
         chatName = otherUser.name;
     } else if (chat.withName) {
         chatName = chat.withName;
@@ -945,9 +1009,7 @@ function createChatElement(chat) {
     let photoUrl = 'https://via.placeholder.com/50';
     
     // Tenta obter a foto do outro participante
-    if (chat.isGroup) {
-        photoUrl = chat.groupPhoto || photoUrl;
-    } else if (otherUser) {
+    if (otherUser) {
         photoUrl = otherUser.photoURL || otherUser.photoBase64 || photoUrl;
     } else if (chat.participantPhotos && chat.participantPhotos[otherParticipantId]) {
         photoUrl = chat.participantPhotos[otherParticipantId];
@@ -963,7 +1025,6 @@ function createChatElement(chat) {
                 ? `<img src="${photoUrl}" alt="${chatName}" onerror="this.parentNode.innerHTML = '<div class=\'avatar-initials\'>${initials}</div>'">` 
                 : `<div class="avatar-initials">${initials}</div>`
             }
-            ${chat.isGroup ? '<span class="group-badge"><i class="fas fa-users"></i></span>' : ''}
         </div>
         <div class="chat-info">
             <div class="chat-header">
@@ -1333,12 +1394,17 @@ async function openChat(chat) {
 
 // Encontra um chat existente com um usuário específico
 async function findExistingChat(userId) {
+    if (!userId) {
+        console.error('ID de usuário inválido fornecido para findExistingChat');
+        return null;
+    }
+    
     try {
         const chatsRef = collection(db, 'chats');
+        // Busca apenas conversas individuais onde o usuário atual é um participante
         const q = query(
             chatsRef,
-            where('participants', 'array-contains', currentUser.uid),
-            where('isGroup', '==', false)
+            where('participants', 'array-contains', currentUser.uid)
         );
         
         const querySnapshot = await getDocs(q);
@@ -1346,28 +1412,43 @@ async function findExistingChat(userId) {
         // Usando 'docItem' em vez de 'doc' para evitar conflito com a função doc() do Firestore
         for (const docItem of querySnapshot.docs) {
             const chatData = { id: docItem.id, ...docItem.data() };
-            if (chatData.participants.includes(userId)) {
+            
+            // Verifica se o userId está na lista de participantes
+            if (chatData.participants && chatData.participants.includes(userId)) {
                 // Encontrou um chat existente com este usuário
                 const otherParticipantId = chatData.participants.find(id => id !== currentUser.uid);
                 
-                // Busca os detalhes do contato na coleção 'people'
-                let contactDetails = null;
-                try {
-                    const contactDoc = await getDoc(doc(db, 'people', otherParticipantId));
-                    if (contactDoc.exists()) {
-                        contactDetails = contactDoc.data();
+                // Tenta obter os detalhes do participante do chat primeiro
+                let contactName = 'Contato';
+                let contactPhoto = '';
+                
+                // Verifica se temos os detalhes do participante nos dados do chat
+                if (chatData.participantDetails && chatData.participantDetails[otherParticipantId]) {
+                    const details = chatData.participantDetails[otherParticipantId];
+                    contactName = details.name || contactName;
+                    contactPhoto = details.photoURL || details.photoBase64 || '';
+                } 
+                // Se não encontrou nos detalhes do chat, tenta buscar na coleção 'people'
+                else {
+                    try {
+                        const contactDoc = await getDoc(doc(db, 'people', otherParticipantId));
+                        if (contactDoc.exists()) {
+                            const contactData = contactDoc.data();
+                            contactName = contactData.name || contactName;
+                            contactPhoto = contactData.photoURL || contactData.photoBase64 || '';
+                        }
+                    } catch (error) {
+                        console.warn('Erro ao buscar detalhes do contato:', error);
                     }
-                } catch (error) {
-                    console.warn('Erro ao buscar detalhes do contato:', error);
                 }
                 
-                // Obtém o nome do contato (do chat ou do perfil)
-                let contactName = chatData.participantNames?.find((name, index) => 
-                    chatData.participants[index] !== currentUser.uid
-                ) || contactDetails?.name || 'Contato';
-                
-                // Obtém a foto do contato, se disponível
-                const contactPhoto = contactDetails?.photoURL || contactDetails?.photoBase64 || '';
+                // Tenta obter o nome do participante dos nomes do chat, se disponível
+                if (chatData.participantNames && chatData.participants) {
+                    const nameIndex = chatData.participants.indexOf(otherParticipantId);
+                    if (nameIndex !== -1 && chatData.participantNames[nameIndex]) {
+                        contactName = chatData.participantNames[nameIndex];
+                    }
+                }
                 
                 return {
                     id: chatData.id,
@@ -1375,8 +1456,16 @@ async function findExistingChat(userId) {
                     withName: contactName,
                     withPhoto: contactPhoto,
                     lastMessage: chatData.lastMessage,
-                    timestamp: chatData.timestamp || chatData.updatedAt?.toDate().toISOString() || new Date().toISOString(),
-                    unreadCount: chatData.unreadCounts?.[currentUser.uid] || 0
+                    timestamp: chatData.timestamp || 
+                              (chatData.updatedAt ? 
+                                  (typeof chatData.updatedAt.toDate === 'function' ? 
+                                      chatData.updatedAt.toDate().toISOString() : 
+                                      new Date(chatData.updatedAt).toISOString()) : 
+                                  new Date().toISOString()),
+                    unreadCount: chatData.unreadCounts?.[currentUser.uid] || 0,
+                    // Inclui os detalhes completos para uso posterior
+                    participants: chatData.participants || [],
+                    participantDetails: chatData.participantDetails || {}
                 };
             }
         }
@@ -1526,66 +1615,128 @@ function updateContactStatus(userId, status) {
 
 // Cria um novo chat com um contato
 async function createNewChat(contact) {
+    console.log('Criando novo chat com:', contact);
+    
+    if (!currentUser || !currentUser.uid) {
+        console.error('Usuário não autenticado ou sem UID');
+        return null;
+    }
+    
+    // Valida se o contato tem UID válido
+    if (!contact.userId) {
+        console.error('Não é possível criar chat: contato não possui UID válido');
+        showNotification('error', 'Erro', 'Este contato não está disponível para chat. Tente ligar para este contato.');
+        return null;
+    }
+    
     try {
-        if (!contact || !contact.id) {
-            throw new Error('Contato inválido para criar chat');
+        // Verifica se já existe um chat com este contato
+        const existingChat = await findExistingChat(contact.userId);
+        if (existingChat) {
+            console.log('Chat existente encontrado:', existingChat);
+            return existingChat;
         }
-
-        // Obtém o nome de exibição do contato, usando a propriedade correta
-        // (pode ser displayName ou name, dependendo de como está vindo do banco de dados)
-        const contactDisplayName = contact.displayName || contact.name || 'Contato';
-        const userDisplayName = currentUser.displayName || 'Usuário';
-
+        
+        // Busca os dados mais recentes do contato
+        let contactData = { ...contact };
+        try {
+            const contactDoc = await getDoc(doc(db, 'people', contact.userId));
+            if (contactDoc.exists()) {
+                const latestData = contactDoc.data();
+                contactData = {
+                    ...contactData,
+                    displayName: latestData.name || contact.displayName,
+                    email: latestData.email || contact.email,
+                    photoURL: latestData.photoURL || latestData.photoBase64 || contact.photoURL || ''
+                };
+            }
+        } catch (error) {
+            console.warn('Não foi possível buscar dados atualizados do contato:', error);
+        }
+        
         // Cria um ID único para o chat
         const chatId = doc(collection(db, 'chats')).id;
-        const chatRef = doc(db, 'chats', chatId);
-        const timestamp = serverTimestamp();
         
-        // Dados iniciais do chat
+        // Prepara os dados do chat com UIDs corretos
+        const currentUserName = currentUser.displayName || currentUser.email?.split('@')[0] || 'Usuário';
+        const contactName = contactData.displayName || contactData.email?.split('@')[0] || 'Contato';
+        
         const chatData = {
             id: chatId,
-            participants: [currentUser.uid, contact.id],
-            participantNames: [userDisplayName, contactDisplayName],
+            participants: [currentUser.uid, contactData.userId],
+            participantNames: [currentUserName, contactName],
             participantDetails: {
                 [currentUser.uid]: {
-                    name: userDisplayName,
+                    name: currentUserName,
                     email: currentUser.email || '',
-                    photoURL: currentUser.photoURL || ''
+                    photoURL: currentUser.photoURL || '',
+                    uid: currentUser.uid // Garante que o UID está incluído
                 },
-                [contact.id]: {
-                    name: contactDisplayName,
-                    email: contact.email || '',
-                    photoURL: contact.photoURL || contact.photoBase64 || ''
+                [contactData.userId]: {
+                    name: contactName,
+                    email: contactData.email || '',
+                    photoURL: contactData.photoURL || contactData.photoBase64 || '',
+                    uid: contactData.userId // Garante que o UID está incluído
                 }
             },
-            isGroup: false,
-            createdAt: timestamp,
-            updatedAt: timestamp,
-            lastMessage: null,
-            lastMessageTime: null,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            lastMessage: '',
+            lastMessageAt: null,
+            lastMessageSenderId: null,
             unreadCounts: {
                 [currentUser.uid]: 0,
-                [contact.id]: 0
-            },
-            createdBy: currentUser.uid
+                [contactData.userId]: 0
+            }
         };
-
-        // Salva o chat no Firestore
-        await setDoc(chatRef, chatData);
         
-        // Retorna os dados do chat criado
-        return {
-            id: chatId,
-            withId: contact.id,
-            withName: contactDisplayName,
-            withPhoto: contact.photoURL || contact.photoBase64 || '',
-            lastMessage: null,
-            timestamp: new Date().toISOString(),
-            unreadCount: 0
-        };
+        console.log('Dados do chat a serem salvos:', chatData);
+        
+        // Cria o documento do chat na coleção 'chats'
+        await setDoc(doc(db, 'chats', chatId), chatData);
+        
+        // Adiciona o chat à subcoleção 'chats' de cada participante
+        const batch = writeBatch(db);
+        
+        // Para o usuário atual
+        const currentUserChatRef = doc(db, 'users', currentUser.uid, 'chats', chatId);
+        batch.set(currentUserChatRef, {
+            chatId: chatId,
+            otherUserId: contactData.userId,
+            otherUserName: contactName,
+            otherUserPhotoURL: contactData.photoURL || contactData.photoBase64 || '',
+            lastMessage: '',
+            lastMessageAt: null,
+            lastMessageSenderId: null,
+            unreadCount: 0,
+            updatedAt: serverTimestamp()
+        });
+        
+        // Para o contato (se o contato tiver UID válido)
+        if (contactData.userId) {
+            const contactChatRef = doc(db, 'users', contactData.userId, 'chats', chatId);
+            batch.set(contactChatRef, {
+                chatId: chatId,
+                otherUserId: currentUser.uid,
+                otherUserName: currentUserName,
+                otherUserPhotoURL: currentUser.photoURL || '',
+                lastMessage: '',
+                lastMessageAt: null,
+                lastMessageSenderId: null,
+                unreadCount: 0,
+                updatedAt: serverTimestamp()
+            });
+        }
+        
+        await batch.commit();
+        
+        console.log('Novo chat criado com sucesso:', chatId);
+        return { id: chatId, ...chatData };
+        
     } catch (error) {
         console.error('Erro ao criar novo chat:', error);
-        throw error;
+        showNotification('error', 'Erro', 'Não foi possível iniciar o chat. Tente novamente mais tarde.');
+        return null;
     }
 }
 
@@ -1593,33 +1744,68 @@ async function createNewChat(contact) {
 async function startNewChat(contact) {
     if (!contact || !contact.id) {
         console.error('Contato inválido:', contact);
+        showNotification('error', 'Erro', 'Contato inválido. Por favor, tente novamente.');
+        return;
+    }
+    
+    // Verifica se o contato tem UID válido
+    if (!contact.userId) {
+        console.error('Contato sem UID válido:', contact);
+        showNotification('warning', 'Aviso', 'Este contato não está disponível para chat. Por favor, tente ligar para este contato.');
         return;
     }
     
     try {
+        // Busca os dados mais recentes do contato para garantir que temos o UID correto
+        let contactData = { ...contact };
+        try {
+            const contactDoc = await getDoc(doc(db, 'people', contact.id));
+            if (contactDoc.exists()) {
+                const latestData = contactDoc.data();
+                contactData = {
+                    ...contactData,
+                    userId: latestData.uid || contact.userId || contact.id, // Garante que temos o UID correto
+                    displayName: latestData.name || contact.displayName,
+                    email: latestData.email || contact.email,
+                    photoURL: latestData.photoURL || latestData.photoBase64 || contact.photoURL || ''
+                };
+                
+                // Verifica novamente o UID após buscar os dados atualizados
+                if (!contactData.userId) {
+                    throw new Error('Contato não possui UID válido');
+                }
+            }
+        } catch (error) {
+            console.error('Erro ao buscar dados atualizados do contato:', error);
+            showNotification('error', 'Erro', 'Não foi possível carregar os dados do contato. Tente novamente.');
+            return;
+        }
+        
         // Verifica se já existe um chat com este contato
-        const existingChat = await findExistingChat(contact.id);
+        const existingChat = await findExistingChat(contactData.userId);
         
         if (existingChat) {
             // Atualiza as informações do contato antes de abrir o chat
             const updatedChat = {
                 ...existingChat,
-                withName: contact.displayName || existingChat.withName,
-                photoURL: contact.photoURL || contact.photoBase64 || existingChat.photoURL,
-                status: contact.status || 'offline'
+                withId: contactData.userId, // Garante que estamos usando o UID correto
+                withName: contactData.displayName || existingChat.withName,
+                photoURL: contactData.photoURL || contactData.photoBase64 || existingChat.photoURL,
+                status: contactData.status || 'offline'
             };
             openChat(updatedChat);
             return;
         }
         
         // Cria um novo chat
-        const newChat = await createNewChat(contact);
+        const newChat = await createNewChat(contactData);
         
         if (newChat) {
             // Obtém o status atual do contato
             let contactStatus = 'offline';
             try {
-                const statusDoc = await getDoc(doc(db, 'chat_status', contact.id));
+                // Usa o UID para verificar o status
+                const statusDoc = await getDoc(doc(db, 'chat_status', contactData.userId));
                 if (statusDoc.exists()) {
                     contactStatus = statusDoc.data().status || 'offline';
                 }
@@ -1630,85 +1816,228 @@ async function startNewChat(contact) {
             // Abre o chat recém-criado com todas as informações necessárias
             openChat({
                 id: newChat.id,
-                withId: contact.id,
-                withName: contact.displayName || contact.email || 'Contato',
-                withPhoto: contact.photoURL || contact.photoBase64 || '',
+                withId: contactData.userId, // Usa o UID em vez do ID do documento
+                withName: contactData.displayName || contactData.email || 'Contato',
+                withPhoto: contactData.photoURL || contactData.photoBase64 || '',
                 lastMessage: newChat.lastMessage || '',
                 timestamp: newChat.timestamp || new Date().toISOString(),
                 unreadCount: 0,
-                status: contactStatus
+                status: contactStatus,
+                // Garante que os participantes estejam corretos
+                participants: [currentUser.uid, contactData.userId],
+                participantDetails: {
+                    [currentUser.uid]: {
+                        name: currentUser.displayName || currentUser.email?.split('@')[0] || 'Você',
+                        email: currentUser.email || '',
+                        photoURL: currentUser.photoURL || '',
+                        uid: currentUser.uid
+                    },
+                    [contactData.userId]: {
+                        name: contactData.displayName || contactData.email?.split('@')[0] || 'Contato',
+                        email: contactData.email || '',
+                        photoURL: contactData.photoURL || contactData.photoBase64 || '',
+                        uid: contactData.userId
+                    }
+                }
             });
         }
     } catch (error) {
         console.error('Erro ao iniciar nova conversa:', error);
-        // Mostra mensagem de erro para o usuário de forma mais amigável
-        const errorMessage = document.createElement('div');
-        errorMessage.className = 'error-message';
-        errorMessage.textContent = 'Não foi possível iniciar a conversa. Tente novamente.';
-        document.body.appendChild(errorMessage);
         
-        // Remove a mensagem após 3 segundos
-        setTimeout(() => {
-            if (document.body.contains(errorMessage)) {
-                document.body.removeChild(errorMessage);
-            }
-        }, 3000);
+        // Mensagens de erro mais específicas
+        let errorMessage = 'Não foi possível iniciar a conversa. Tente novamente.';
+        
+        if (error.message.includes('não possui UID válido') || 
+            error.message.includes('não está disponível para chat')) {
+            errorMessage = 'Este contato não está disponível para chat. Por favor, tente ligar.';
+        } else if (error.message.includes('permission-denied')) {
+            errorMessage = 'Você não tem permissão para iniciar uma conversa com este contato.';
+        } else if (error.message.includes('not-found')) {
+            errorMessage = 'Contato não encontrado. Por favor, verifique e tente novamente.';
+        }
+        
+        showNotification('error', 'Erro', errorMessage);
     }
 }
 
 // Envia uma mensagem
 async function sendMessage() {
     const message = messageInput.value.trim();
-    if (!message || !currentUser || !currentChatId) return;
     
-    const messageData = {
-        text: message,
-        senderId: currentUser.uid,
-        senderName: currentUser.displayName || currentUser.email.split('@')[0],
-        timestamp: serverTimestamp(),
-        read: false
-    };
+    // Validações iniciais
+    if (!message) return;
+    if (!currentUser || !currentUser.uid) {
+        console.error('Usuário não autenticado ou sem UID');
+        showNotification('error', 'Erro', 'Você precisa estar autenticado para enviar mensagens.');
+        return;
+    }
+    if (!currentChatId) {
+        console.error('Nenhum chat selecionado');
+        showNotification('error', 'Erro', 'Nenhum chat selecionado.');
+        return;
+    }
+    
+    // Salva a referência do elemento de entrada para limpar depois
+    const inputElement = messageInput;
+    
+    // Desabilita o botão de enviar para evitar múltiplos envios
+    const sendButton = document.querySelector('.send-message-btn');
+    if (sendButton) {
+        sendButton.disabled = true;
+        sendButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    }
     
     try {
-        // Adiciona a mensagem à conversa
-        const messagesRef = collection(db, 'chats', currentChatId, 'messages');
-        await addDoc(messagesRef, messageData);
-        
-        // Atualiza o último horário da mensagem no chat
+        // 1. Primeiro, obtém os dados do chat
         const chatRef = doc(db, 'chats', currentChatId);
         const chatDoc = await getDoc(chatRef);
+        
+        if (!chatDoc.exists()) {
+            throw new Error('Chat não encontrado');
+        }
+        
         const chatData = chatDoc.data();
         
-        // Atualiza a contagem de mensagens não lidas para os outros participantes
+        // 2. Valida os participantes do chat
+        if (!chatData.participants || !Array.isArray(chatData.participants) || chatData.participants.length === 0) {
+            throw new Error('Chat sem participantes válidos');
+        }
+        
+        // 3. Verifica se o usuário atual é um participante do chat
+        if (!chatData.participants.includes(currentUser.uid)) {
+            throw new Error('Você não tem permissão para enviar mensagens neste chat');
+        }
+        
+        // 4. Obtém o ID do destinatário (o outro participante)
+        const recipientId = chatData.participants.find(id => id !== currentUser.uid);
+        if (!recipientId) {
+            throw new Error('Não foi possível identificar o destinatário');
+        }
+        
+        // 5. Verifica se o destinatário tem UID válido
+        try {
+            const recipientDoc = await getDoc(doc(db, 'people', recipientId));
+            if (!recipientDoc.exists()) {
+                throw new Error('Destinatário não encontrado');
+            }
+            
+            const recipientData = recipientDoc.data();
+            if (!recipientData.uid) {
+                // Se o destinatário não tiver UID, não é possível enviar mensagem
+                throw new Error('Este contato não está mais disponível para chat. Por favor, tente ligar.');
+            }
+        } catch (error) {
+            console.error('Erro ao verificar destinatário:', error);
+            throw new Error('Não foi possível verificar o destinatário. Tente novamente mais tarde.');
+        }
+        
+        // 6. Prepara os dados da mensagem
+        const messageData = {
+            text: message,
+            senderId: currentUser.uid,
+            senderName: currentUser.displayName || currentUser.email?.split('@')[0] || 'Usuário',
+            timestamp: serverTimestamp(),
+            read: false
+        };
+        
+        // 7. Adiciona a mensagem à subcoleção 'messages'
+        const messagesRef = collection(db, 'chats', currentChatId, 'messages');
+        const messageRef = await addDoc(messagesRef, messageData);
+        
+        console.log('Mensagem enviada com ID:', messageRef.id);
+        
+        // 8. Prepara as atualizações para o documento do chat
         const updates = {
             lastMessage: message,
             lastMessageAt: serverTimestamp(),
-            [`unreadCounts.${currentUser.uid}`]: 0,
-            updatedAt: serverTimestamp()
+            lastMessageSenderId: currentUser.uid,
+            updatedAt: serverTimestamp(),
+            // Garante que o campo unreadCounts existe
+            unreadCounts: chatData.unreadCounts || {}
         };
         
-        // Incrementa a contagem de não lidas para os outros participantes
-        if (chatData.participants) {
-            chatData.participants.forEach(participantId => {
+        // 9. Atualiza a contagem de mensagens não lidas
+        // Zera a contagem para o remetente
+        updates.unreadCounts[currentUser.uid] = 0;
+        
+        // Incrementa para os outros participantes
+        const batch = writeBatch(db);
+        let hasValidRecipients = false;
+        
+        if (chatData.participants && Array.isArray(chatData.participants)) {
+            for (const participantId of chatData.participants) {
                 if (participantId !== currentUser.uid) {
-                    updates[`unreadCounts.${participantId}`] = (chatData.unreadCounts?.[participantId] || 0) + 1;
+                    updates.unreadCounts[participantId] = (updates.unreadCounts[participantId] || 0) + 1;
+                    
+                    try {
+                        // Verifica se o participante tem UID válido
+                        const participantDoc = await getDoc(doc(db, 'people', participantId));
+                        if (!participantDoc.exists() || !participantDoc.data()?.uid) {
+                            console.warn(`Participante ${participantId} não encontrado ou sem UID, pulando atualização`);
+                            continue;
+                        }
+                        
+                        // Atualiza o documento do chat para o participante
+                        const userChatRef = doc(db, 'users', participantId, 'chats', currentChatId);
+                        batch.set(userChatRef, {
+                            lastMessage: message,
+                            lastMessageAt: serverTimestamp(),
+                            lastMessageSenderId: currentUser.uid,
+                            unreadCount: updates.unreadCounts[participantId],
+                            updatedAt: serverTimestamp()
+                        }, { merge: true });
+                        
+                        hasValidRecipients = true;
+                    } catch (error) {
+                        console.error(`Erro ao atualizar chat do usuário ${participantId}:`, error);
+                    }
                 }
-            });
+            }
         }
         
+        // 10. Aplica as atualizações em lote
+        if (hasValidRecipients) {
+            await batch.commit();
+        }
+        
+        // 11. Atualiza o documento principal do chat
         await updateDoc(chatRef, updates);
         
-        // Limpa o campo de mensagem
-        messageInput.value = '';
+        // 12. Limpa o campo de mensagem e foca nele novamente
+        inputElement.value = '';
+        inputElement.focus();
         
-        // Força a atualização da lista de chats
+        // 13. Força a atualização da lista de chats
         if (typeof loadChats === 'function') {
             loadChats();
         }
         
+        console.log('Mensagem enviada e chat atualizado com sucesso');
+        
     } catch (error) {
         console.error('Erro ao enviar mensagem:', error);
-        alert('Não foi possível enviar a mensagem. Tente novamente.');
+        
+        // Mensagens de erro mais amigáveis
+        let errorMessage = 'Erro ao enviar mensagem';
+        
+        if (error.message.includes('permission-denied')) {
+            errorMessage = 'Você não tem permissão para enviar mensagens neste chat';
+        } else if (error.message.includes('not-found') || error.message.includes('não encontrado')) {
+            errorMessage = 'Chat não encontrado. Por favor, recarregue a página e tente novamente.';
+        } else if (error.message.includes('não está mais disponível para chat')) {
+            errorMessage = error.message;
+        } else if (error.message.includes('destinatário')) {
+            errorMessage = error.message;
+        }
+        
+        showNotification('error', 'Erro', errorMessage);
+        
+    } finally {
+        // Reativa o botão de enviar independentemente do resultado
+        if (sendButton) {
+            sendButton.disabled = false;
+            sendButton.innerHTML = '<i class="fas fa-paper-plane"></i>';
+        }
     }
 }
 
@@ -1751,6 +2080,10 @@ async function loadMessages(chatId) {
             return;
         }
         
+        // Obtém os detalhes dos participantes do chat
+        const chatData = chatDoc.data();
+        const participantDetails = chatData.participantDetails || {};
+        
         const messagesRef = collection(db, 'chats', chatId, 'messages');
         const q = query(messagesRef, orderBy('timestamp', 'asc'));
         
@@ -1758,27 +2091,61 @@ async function loadMessages(chatId) {
         conversationMessages.innerHTML = '';
         
         // Configura o listener em tempo real para as mensagens
-        messageListener = onSnapshot(q, (querySnapshot) => {
+        messageListener = onSnapshot(q, async (querySnapshot) => {
             // Limpa as mensagens apenas na primeira vez
             if (!conversationMessages.querySelector('.message')) {
                 conversationMessages.innerHTML = '';
             }
             
             // Processa cada mensagem
+            const messagePromises = [];
+            const fragment = document.createDocumentFragment();
+            
             querySnapshot.docChanges().forEach((change) => {
                 if (change.type === 'added') {
                     const message = { id: change.doc.id, ...change.doc.data() };
-                    const messageElement = createMessageElement(message);
                     
-                    // Verifica se a mensagem já existe para evitar duplicação
-                    if (!document.getElementById(`message-${message.id}`)) {
-                        messageElement.id = `message-${message.id}`;
-                        conversationMessages.appendChild(messageElement);
-                        // Rola para a última mensagem
-                        conversationMessages.scrollTop = conversationMessages.scrollHeight;
-                    }
+                    // Cria um elemento temporário para a mensagem
+                    const tempDiv = document.createElement('div');
+                    tempDiv.style.display = 'none';
+                    
+                    // Adiciona a promessa de criação da mensagem ao array
+                    const messagePromise = (async () => {
+                        try {
+                            const messageElement = await createMessageElement(message, participantDetails);
+                            messageElement.id = `message-${message.id}`;
+                            
+                            // Verifica se a mensagem já existe para evitar duplicação
+                            if (!document.getElementById(`message-${message.id}`)) {
+                                const clone = messageElement.cloneNode(true);
+                                fragment.appendChild(clone);
+                                return { id: message.id, element: clone };
+                            }
+                        } catch (error) {
+                            console.error('Erro ao criar elemento de mensagem:', error);
+                        }
+                        return null;
+                    })();
+                    
+                    messagePromises.push(messagePromise);
                 }
             });
+            
+            // Aguarda todas as mensagens serem processadas
+            const messages = await Promise.all(messagePromises);
+            
+            // Adiciona todas as mensagens ao DOM de uma vez
+            conversationMessages.appendChild(fragment);
+            
+            // Mostra as mensagens
+            messages.forEach(item => {
+                if (item && item.element) {
+                    item.element.style.display = '';
+                }
+            });
+            
+            // Rola para a última mensagem
+            conversationMessages.scrollTop = conversationMessages.scrollHeight;
             
             // Se não houver mensagens, mostra a mensagem de "nenhuma mensagem"
             if (querySnapshot.empty) {
@@ -1811,20 +2178,86 @@ async function loadMessages(chatId) {
 }
 
 // Cria um elemento de mensagem
-function createMessageElement(message) {
+async function createMessageElement(message, participantDetails = {}) {
     const isSent = message.senderId === currentUser.uid;
     const time = message.timestamp ? formatTime(message.timestamp.toDate()) : '';
     
+    // Busca os dados do remetente
+    let senderName = 'Usuário';
+    let senderInitials = 'U';
+    let avatarColor = '#ccc';
+    let photoURL = '';
+    
+    if (message.senderId) {
+        try {
+            // Verifica se temos os detalhes do participante no objeto participantDetails
+            if (participantDetails[message.senderId]) {
+                const participant = participantDetails[message.senderId];
+                senderName = participant.name || participant.displayName || 'Usuário';
+                photoURL = participant.photoURL || '';
+            } 
+            // Se não encontrar no participantDetails, tenta buscar no Firestore
+            else {
+                const senderRef = doc(db, 'people', message.senderId);
+                const senderDoc = await getDoc(senderRef);
+                
+                if (senderDoc.exists()) {
+                    const senderData = senderDoc.data();
+                    senderName = senderData.name || senderData.displayName || 'Usuário';
+                    photoURL = senderData.photoURL || '';
+                }
+            }
+            
+            // Gera iniciais a partir do nome
+            if (senderName) {
+                senderInitials = getInitials(senderName);
+                // Gera uma cor baseada no ID do usuário para o avatar
+                avatarColor = stringToColor(message.senderId);
+            }
+        } catch (error) {
+            console.error('Erro ao buscar dados do remetente:', error);
+        }
+    }
+    
     const element = document.createElement('div');
     element.className = `message ${isSent ? 'message-sent' : 'message-received'}`;
-    element.innerHTML = `
-        <div class="message-bubble">
-            ${message.text}
-            <div class="message-time">${time}</div>
-        </div>
-    `;
+    
+    // Se for uma mensagem recebida, adiciona o avatar e nome do remetente
+    if (!isSent) {
+        element.innerHTML = `
+            <div class="message-avatar" style="background-color: ${avatarColor}">
+                ${photoURL ? `<img src="${photoURL}" alt="${senderName}" class="avatar-image" />` : senderInitials}
+            </div>
+            <div class="message-content">
+                <div class="message-sender">${senderName}</div>
+                <div class="message-bubble">
+                    ${message.text}
+                    <div class="message-time">${time}</div>
+                </div>
+            </div>
+        `;
+    } else {
+        // Para mensagens enviadas, mantém o layout original
+        element.innerHTML = `
+            <div class="message-bubble">
+                ${message.text}
+                <div class="message-time">${time}</div>
+            </div>
+        `;
+    }
     
     return element;
+}
+
+// Função auxiliar para gerar uma cor a partir de uma string
+function stringToColor(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    
+    const hue = Math.abs(hash % 360);
+    return `hsl(${hue}, 70%, 60%)`;
 }
 
 // Marca as mensagens como lidas
@@ -1915,34 +2348,7 @@ function updateUnreadCount(count) {
     }
 }
 
-// Abre o modal de novo grupo
-function openNewGroupModal() {
-    newGroupModal.style.display = 'flex';
-    setTimeout(() => {
-        newGroupModal.classList.add('active');
-    }, 10);
-}
-
-// Fecha o modal de novo grupo
-function closeNewGroupModal() {
-    newGroupModal.classList.remove('active');
-    setTimeout(() => {
-        newGroupModal.style.display = 'none';
-        groupNameInput.value = '';
-    }, 300);
-}
-
-// Cria um novo grupo
-async function createGroup() {
-    const groupName = groupNameInput.value.trim();
-    if (!groupName) return;
-    
-    // Aqui você implementaria a lógica para criar um novo grupo
-    // Incluindo a seleção de participantes, etc.
-    
-    alert(`Grupo "${groupName}" criado com sucesso!`);
-    closeNewGroupModal();
-}
+// Funções relacionadas a grupos foram removidas para simplificar o chat
 
 // Funções auxiliares
 function toggleChatModal() {

@@ -127,6 +127,11 @@
                         <img src="admin.png" alt="Login" />
                         <span>Admin Ramais</span>
                     </button>
+                    <!-- Botão para ativar notificações -->
+                    <button id="enableNotificationsBtn" class="btn-notification">
+                    <i class="fas fa-bell"></i>
+                    <span>Ativar Notificações</span>
+                    </button>
 
                     <div class="status-options-menu">
                         <div class="status-collaboration" style="margin: 8px 0; padding: 8px 12px; border-radius: 8px; text-align: center; font-size: 0.9rem; color: #006c5b;">
@@ -753,7 +758,6 @@ if (menuToggle && menuDropdown) {
         <div class="chat-header-tabs">
             <button class="tab-button active" data-tab="chats">Conversas</button>
             <button class="tab-button" data-tab="contacts">Contatos</button>
-            <button class="tab-button" data-tab="groups">Grupos</button>
         </div>
         <button class="close-chat">&times;</button>
     </div>
@@ -786,22 +790,6 @@ if (menuToggle && menuDropdown) {
             </div>
         </div>
         
-        <!-- Aba de Grupos -->
-        <div id="groupsTab" class="tab-content">
-            <div class="groups-actions">
-                <button id="createGroupBtn" class="btn-primary">
-                    <i class="fas fa-plus"></i> Novo Grupo
-                </button>
-            </div>
-            <div class="groups-list" id="groupsList">
-                <!-- Lista de grupos será preenchida via JavaScript -->
-                <div class="no-groups">
-                    <i class="fas fa-users"></i>
-                    <p>Nenhum grupo encontrado</p>
-                    <p class="hint">Crie um grupo para começar a conversar</p>
-                </div>
-            </div>
-        </div>
     </div>
     
     <div class="chat-footer">
@@ -847,31 +835,6 @@ if (menuToggle && menuDropdown) {
     </div>
 </div>
 
-<!-- Modal de Novo Grupo -->
-<div id="newGroupModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>Novo Grupo</h3>
-            <button class="close-modal">&times;</button>
-        </div>
-        <div class="modal-body">
-            <div class="form-group">
-                <label for="groupName">Nome do Grupo</label>
-                <input type="text" id="groupName" placeholder="Digite o nome do grupo">
-            </div>
-            <div class="form-group">
-                <label>Selecione os participantes</label>
-                <div class="participants-list" id="groupParticipants">
-                    <!-- Lista de contatos para seleção -->
-                </div>
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button class="btn-secondary" id="cancelGroupBtn">Cancelar</button>
-            <button class="btn-primary" id="createGroupConfirmBtn">Criar Grupo</button>
-        </div>
-    </div>
-</div>
 
 <button id="btnScrollTop" class="scroll-top-btn" title="Voltar ao topo" style="display:none;"><i class="fas fa-arrow-up"></i></button>
 <style>
