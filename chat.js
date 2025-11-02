@@ -18,6 +18,7 @@ import {
     orderBy, 
     serverTimestamp,
     updateDoc,
+    writeBatch,
     addDoc,
     arrayUnion,
     arrayRemove
@@ -586,7 +587,7 @@ async function loadContacts() {
         const contactsMap = new Map();
         
         // Adiciona cada usuário como um contato
-        querySnapshot.forEach((doc) => {
+        querySnapshot.forEach(async (doc) => {
             const userData = doc.data();
             const userId = doc.id;
             const userEmail = userData.email?.toLowerCase() || '';
@@ -599,15 +600,20 @@ async function loadContacts() {
             
             // Se for o próprio usuário, não adiciona na lista de contatos
             if (isCurrentUser) {
-                // Atualiza os dados do usuário atual
-                currentUser = {
-                    ...currentUser,
-                    uid: userId, // Garante que o UID correto seja usado
-                    displayName: userData.name || currentUser.displayName,
-                    photoURL: userData.photoURL || userData.photoBase64 || currentUser.photoURL
-                };
+            // ✅ Mantém o UID real do Firebase Auth
+            currentUser = {
+            ...currentUser,
+            displayName: userData.name || currentUser.displayName,
+            photoURL: userData.photoURL || userData.photoBase64 || currentUser.photoURL
+            };
+
+    // Garante que a coleção "people" tem o campo uid preenchido corretamente
+            const userRef = doc(db, 'people', userId);
+            await setDoc(userRef, { uid: currentUser.uid }, { merge: true });
+
                 return; // Pula para o próximo contato
             }
+
             
             // Verifica se o contato tem UID válido
             if (!userId) {
@@ -641,8 +647,11 @@ async function loadContacts() {
             
         });
         
-        // Depois de carregar todos os contatos, carrega os status online
+        // Depois de carregar todos os contatos, carrega os status online e ordena
         loadOnlineStatuses(contactsMap);
+        
+        // Ordena os contatos após carregar todos
+        setTimeout(() => sortContactsByStatus(), 500); // Pequeno delay para garantir que todos os status foram carregados
         
     } catch (error) {
         console.error('Erro ao carregar contatos:', error);
@@ -729,6 +738,8 @@ async function loadOnlineStatuses(contactsMap = null) {
 
 // Configura listeners em tempo real
 let chatListListener = null;
+let unsubscribeStatus = null;
+
 
 function setupRealtimeListeners() {
     // Remove o listener anterior se existir
@@ -738,23 +749,55 @@ function setupRealtimeListeners() {
     
     if (!currentUser) return;
     
-    // Listener para atualizações na lista de chats
+    // Listener otimizado para lista de chats
     const chatsQuery = query(
         collection(db, 'chats'),
         where('participants', 'array-contains', currentUser.uid),
         orderBy('updatedAt', 'desc')
-    );
-    
+);
+
     chatListListener = onSnapshot(chatsQuery, (snapshot) => {
         snapshot.docChanges().forEach((change) => {
-            if (change.type === 'added' || change.type === 'modified') {
-                const chatData = { id: change.doc.id, ...change.doc.data() };
-                updateChatList(chatData);
+            const chatData = { id: change.doc.id, ...change.doc.data() };
+
+            if (change.type === 'added') {
+                // Adiciona apenas se ainda não existe
+                if (!document.getElementById(`chat-${chatData.id}`)) {
+                    const chatElement = createChatElement(chatData);
+                    chatList.prepend(chatElement);
+                }
+            } 
+            else if (change.type === 'modified') {
+                // Atualiza apenas o preview e badge
+                const chatEl = document.getElementById(`chat-${chatData.id}`);
+                if (chatEl) {
+                    const lastMsgEl = chatEl.querySelector('.chat-last-message');
+                    const timeEl = chatEl.querySelector('.chat-time');
+                    const unreadBadge = chatEl.querySelector('.unread-badge');
+
+                    if (lastMsgEl) lastMsgEl.textContent = chatData.lastMessage || '';
+                    if (timeEl && chatData.updatedAt) {
+                        const date = chatData.updatedAt.toDate ? chatData.updatedAt.toDate() : new Date(chatData.updatedAt);
+                        timeEl.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    }
+
+                    const unread = chatData.unreadCounts?.[currentUser.uid] || 0;
+                    if (unreadBadge) {
+                        unreadBadge.textContent = unread;
+                        unreadBadge.style.display = unread > 0 ? 'flex' : 'none';
+                    }
+                }
+            } 
+            else if (change.type === 'removed') {
+                const el = document.getElementById(`chat-${chatData.id}`);
+                if (el) el.remove();
             }
         });
     }, (error) => {
         console.error('Erro no listener de chats:', error);
     });
+
+
     if (!currentUser) return;
     
     console.log('[setupRealtimeListeners] Configurando listeners em tempo real...');
@@ -764,7 +807,7 @@ function setupRealtimeListeners() {
     
     // Listener para atualizações de status dos contatos
     const statusRef = collection(db, 'chat_status');
-    const unsubscribeStatus = onSnapshot(statusRef, (snapshot) => {
+    unsubscribeStatus = onSnapshot(statusRef, (snapshot) => {
         console.log(`[setupRealtimeListeners] Atualização de status recebida: ${snapshot.docChanges().length} alterações`);
         
         snapshot.docChanges().forEach((change) => {
@@ -808,41 +851,13 @@ function setupRealtimeListeners() {
         console.error('[setupRealtimeListeners] Erro no listener de status:', error);
     });
     
-    // Listener para novas mensagens
-    const chatsRef = collection(db, 'users', currentUser.uid, 'chats');
-    const unsubscribeChats = onSnapshot(chatsRef, (snapshot) => {
-        console.log(`[setupRealtimeListeners] Atualização de chats recebida: ${snapshot.docChanges().length} alterações`);
-        
-        snapshot.docChanges().forEach((change) => {
-            if (change.type === 'added' || change.type === 'modified') {
-                const chat = { id: change.doc.id, ...change.doc.data() };
-                console.log(`[setupRealtimeListeners] Chat ${change.type}: ${chat.id}`, chat);
-                
-                updateChatList(chat);
-                
-                // Se for a conversa atual, atualiza as mensagens
-                if (currentChatId === chat.id) {
-                    console.log(`[setupRealtimeListeners] Atualizando mensagens da conversa atual: ${chat.id}`);
-                    loadMessages(chat.id);
-                }
-                
-                // Atualiza o contador de não lidas
-                if (chat.unreadCount > 0 && chat.id !== currentChatId) {
-                    console.log(`[setupRealtimeListeners] Atualizando contador de não lidas: ${chat.unreadCount}`);
-                    updateUnreadCount(chat.unreadCount);
-                }
-            }
-        });
-    }, (error) => {
-        console.error('[setupRealtimeListeners] Erro no listener de chats:', error);
-    });
-    
-    // Retorna função para cancelar os listeners quando não forem mais necessários
+    // Retorna função para cancelar os listeners quando o usuário sair
     return () => {
         console.log('[setupRealtimeListeners] Removendo listeners em tempo real');
+        if (typeof chatListListener === 'function') chatListListener();
         if (typeof unsubscribeStatus === 'function') unsubscribeStatus();
-        if (typeof unsubscribeChats === 'function') unsubscribeChats();
     };
+
 }
 
 // Atualiza a lista de chats na interface
@@ -863,9 +878,8 @@ function updateChatList(chat) {
     if (!chatElement) {
         // Se não existir, cria um novo elemento
         chatElement = createChatElement(chat);
-        if (chatElement) {
-            chatList.prepend(chatElement); // Adiciona no início da lista
-            console.log(`[updateChatList] Novo chat adicionado à lista: ${chat.id}`);
+        if (chatElement && !document.getElementById(`chat-${chat.id}`)) {
+    chatList.prepend(chatElement);
         }
     } else {
         // Se existir, atualiza os dados
@@ -1211,7 +1225,35 @@ async function openChat(chat) {
     setupBackButton(document.querySelector('.close-conversation'));
     
     // Obtém o nome do contato (pode vir de várias fontes)
-    const contactName = chat.withName || chat.participantNames?.[0] || 'Chat';
+    let contactName = 'Chat';
+    
+    // Tenta obter o nome do outro participante (não o usuário atual)
+    if (chat.participantDetails) {
+        // Encontra o ID do outro participante
+        const otherParticipantId = Object.keys(chat.participantDetails).find(id => id !== currentUser.uid);
+        if (otherParticipantId && chat.participantDetails[otherParticipantId]) {
+            contactName = chat.participantDetails[otherParticipantId].name || 
+                         chat.participantDetails[otherParticipantId].displayName || 
+                         chat.withName || 
+                         'Contato';
+        }
+    } else if (chat.withName) {
+        // Se não tiver participantDetails, usa o withName se existir
+        contactName = chat.withName;
+    } else if (chat.participantNames && chat.participantNames.length > 0) {
+        // Se não tiver withName, tenta pegar o primeiro nome da lista de participantes
+        // que não seja o usuário atual
+        const otherParticipantName = chat.participantNames.find(name => 
+            !name.includes(currentUser.displayName) && 
+            !name.includes(currentUser.email?.split('@')[0])
+        );
+        if (otherParticipantName) {
+            contactName = otherParticipantName;
+        } else {
+            // Se não encontrar, usa o primeiro nome da lista
+            contactName = chat.participantNames[0];
+        }
+    }
     
     // Atualiza o título da conversa
     if (conversationTitle) {
@@ -1219,7 +1261,23 @@ async function openChat(chat) {
     }
     
     // Tenta obter a foto de diferentes fontes
-    const contactPhoto = chat.withPhoto || chat.photoURL || chat.photoBase64 || '';
+    let contactPhoto = '';
+    let otherParticipantId = null;
+    
+    // Encontra o ID do outro participante
+    if (chat.participantDetails) {
+        otherParticipantId = Object.keys(chat.participantDetails).find(id => id !== currentUser.uid);
+        if (otherParticipantId && chat.participantDetails[otherParticipantId]) {
+            contactPhoto = chat.participantDetails[otherParticipantId].photoURL || 
+                          chat.participantDetails[otherParticipantId].photoBase64 || 
+                          '';
+        }
+    }
+    
+    // Se não encontrou a foto nos participantDetails, tenta outras fontes
+    if (!contactPhoto) {
+        contactPhoto = chat.withPhoto || chat.photoURL || chat.photoBase64 || '';
+    }
     
     // Atualiza o avatar
     if (conversationAvatar) {
@@ -1229,7 +1287,7 @@ async function openChat(chat) {
         if (contactPhoto) {
             // Se houver uma foto de perfil, usa-a
             conversationAvatar.innerHTML = `
-                <img src="${contactPhoto}" alt="${contactName}" class="chat-avatar-img">
+                <img src="${contactPhoto}" alt="${contactName}" class="chat-avatar-img" onerror="this.onerror=null; this.parentNode.innerHTML='<div class=\'avatar-initials\'>${getInitials(contactName)}</div>'">
             `;
         } else {
             // Se não houver foto, usa as iniciais
@@ -1283,17 +1341,48 @@ async function openChat(chat) {
             statusText.textContent = isOnline ? 'Online' : 'Offline';
         };
         
+        // Remove qualquer listener de status anterior
+        if (window.statusUnsubscribe) {
+            window.statusUnsubscribe();
+            window.statusUnsubscribe = null;
+        }
+        
         // Tenta obter o status atual do usuário
         const getCurrentStatus = async () => {
             try {
-                // Se tivermos o ID do usuário, buscamos o status mais recente
-                if (chat.userId) {
-                    const statusDoc = await getDoc(doc(db, 'chat_status', chat.userId));
+                // Usa o otherParticipantId se disponível, senão tenta chat.userId
+                const targetUserId = otherParticipantId || chat.userId;
+                
+                if (targetUserId) {
+                    // Configura o listener em tempo real para o status
+                    const statusRef = doc(db, 'chat_status', targetUserId);
+                    
+                    // Pega o status atual primeiro
+                    const statusDoc = await getDoc(statusRef);
                     if (statusDoc.exists()) {
                         const statusData = statusDoc.data();
                         updateStatusUI(statusData.status || 'offline');
-                        return;
+                    } else {
+                        updateStatusUI('offline');
                     }
+                    
+                    // Configura o listener para atualizações em tempo real
+                    const unsubscribe = onSnapshot(statusRef, (doc) => {
+                        if (doc.exists()) {
+                            const statusData = doc.data();
+                            updateStatusUI(statusData.status || 'offline');
+                        } else {
+                            updateStatusUI('offline');
+                        }
+                    }, (error) => {
+                        console.error('Erro no listener de status:', error);
+                    });
+                    
+                    // Armazena a função de unsubscribe globalmente para podermos limpar depois
+                    window.statusUnsubscribe = unsubscribe;
+                    
+                    // Retorna a função para cancelar o listener quando não for mais necessário
+                    return unsubscribe;
                 }
                 
                 // Se não encontrar pelo ID, tenta pelo email
@@ -1477,6 +1566,30 @@ async function findExistingChat(userId) {
     }
 }
 
+// Ordena os contatos para que os online fiquem no topo
+function sortContactsByStatus() {
+    const contactsContainer = document.querySelector('.contacts-list');
+    if (!contactsContainer) return;
+    
+    const contacts = Array.from(contactsContainer.querySelectorAll('.contact-item'));
+    
+    // Ordena os contatos: online primeiro, depois offline
+    contacts.sort((a, b) => {
+        const aIsOnline = a.querySelector('.status-indicator')?.classList.contains('status-online');
+        const bIsOnline = b.querySelector('.status-indicator')?.classList.contains('status-online');
+        
+        if (aIsOnline && !bIsOnline) return -1;
+        if (!aIsOnline && bIsOnline) return 1;
+        return 0;
+    });
+    
+    // Remove todos os contatos do container
+    contacts.forEach(contact => contactsContainer.removeChild(contact));
+    
+    // Adiciona os contatos de volta na nova ordem
+    contacts.forEach(contact => contactsContainer.appendChild(contact));
+}
+
 // Atualiza o status de um contato na interface
 function updateContactStatus(userId, status) {
     try {
@@ -1514,6 +1627,9 @@ function updateContactStatus(userId, status) {
             if (statusText) {
                 statusText.textContent = status === 'online' ? 'Online' : 'Offline';
             }
+            
+            // Ordena os contatos após atualizar o status
+            sortContactsByStatus();
         });
         
         // Atualiza o status na lista de conversas, se aplicável
@@ -1696,39 +1812,53 @@ async function createNewChat(contact) {
         await setDoc(doc(db, 'chats', chatId), chatData);
         
         // Adiciona o chat à subcoleção 'chats' de cada participante
-        const batch = writeBatch(db);
-        
-        // Para o usuário atual
-        const currentUserChatRef = doc(db, 'users', currentUser.uid, 'chats', chatId);
-        batch.set(currentUserChatRef, {
-            chatId: chatId,
-            otherUserId: contactData.userId,
-            otherUserName: contactName,
-            otherUserPhotoURL: contactData.photoURL || contactData.photoBase64 || '',
-            lastMessage: '',
-            lastMessageAt: null,
-            lastMessageSenderId: null,
-            unreadCount: 0,
-            updatedAt: serverTimestamp()
-        });
-        
-        // Para o contato (se o contato tiver UID válido)
-        if (contactData.userId) {
-            const contactChatRef = doc(db, 'users', contactData.userId, 'chats', chatId);
-            batch.set(contactChatRef, {
+        try {
+            console.log('Iniciando batch write para criar chat...');
+            const batch = writeBatch(db);
+            
+            // Para o usuário atual
+            const currentUserChatRef = doc(db, 'users', currentUser.uid, 'chats', chatId);
+            console.log('Criando referência para o chat do usuário atual:', currentUserChatRef.path);
+            
+            batch.set(currentUserChatRef, {
                 chatId: chatId,
-                otherUserId: currentUser.uid,
-                otherUserName: currentUserName,
-                otherUserPhotoURL: currentUser.photoURL || '',
+                otherUserId: contactData.userId,
+                otherUserName: contactName,
+                otherUserPhotoURL: contactData.photoURL || contactData.photoBase64 || '',
                 lastMessage: '',
                 lastMessageAt: null,
                 lastMessageSenderId: null,
                 unreadCount: 0,
                 updatedAt: serverTimestamp()
             });
+            
+            // Para o contato (se o contato tiver UID válido)
+            if (contactData.userId) {
+                const contactChatRef = doc(db, 'users', contactData.userId, 'chats', chatId);
+                console.log('Criando referência para o chat do contato:', contactChatRef.path);
+                
+                batch.set(contactChatRef, {
+                    chatId: chatId,
+                    otherUserId: currentUser.uid,
+                    otherUserName: currentUserName,
+                    otherUserPhotoURL: currentUser.photoURL || '',
+                    lastMessage: '',
+                    lastMessageAt: null,
+                    lastMessageSenderId: null,
+                    unreadCount: 0,
+                    updatedAt: serverTimestamp()
+                });
+            } else {
+                console.warn('ID do contato inválido, pulando criação do chat para o contato');
+            }
+            
+            console.log('Commitando batch...');
+            await batch.commit();
+            console.log('Batch commitado com sucesso');
+        } catch (batchError) {
+            console.error('Erro ao executar batch write:', batchError);
+            throw batchError; // Re-lança o erro para ser capturado pelo bloco catch externo
         }
-        
-        await batch.commit();
         
         console.log('Novo chat criado com sucesso:', chatId);
         return { id: chatId, ...chatData };
@@ -1916,35 +2046,55 @@ async function sendMessage() {
         
         // 5. Verifica se o destinatário tem UID válido
         try {
-            const recipientDoc = await getDoc(doc(db, 'people', recipientId));
-            if (!recipientDoc.exists()) {
-                throw new Error('Destinatário não encontrado');
-            }
-            
-            const recipientData = recipientDoc.data();
-            if (!recipientData.uid) {
-                // Se o destinatário não tiver UID, não é possível enviar mensagem
-                throw new Error('Este contato não está mais disponível para chat. Por favor, tente ligar.');
-            }
+            // Busca o destinatário na coleção 'people' pelo UID (não pelo ID do doc)
+        const recipientQuery = query(collection(db, 'people'), where('uid', '==', recipientId));
+        const recipientSnapshot = await getDocs(recipientQuery);
+
+        if (recipientSnapshot.empty) {
+            throw new Error('Destinatário não encontrado');
+        }
+
+        const recipientData = recipientSnapshot.docs[0].data();
+        if (!recipientData.uid) {
+            throw new Error('Este contato não está mais disponível para chat. Por favor, tente ligar.');
+        }
+
         } catch (error) {
             console.error('Erro ao verificar destinatário:', error);
             throw new Error('Não foi possível verificar o destinatário. Tente novamente mais tarde.');
         }
         
-        // 6. Prepara os dados da mensagem
+        // 6. Limpa o campo de mensagem imediatamente para feedback visual
+        inputElement.value = '';
+        
+        // 7. Prepara os dados da mensagem
         const messageData = {
             text: message,
             senderId: currentUser.uid,
-            senderName: currentUser.displayName || currentUser.email?.split('@')[0] || 'Usuário',
             timestamp: serverTimestamp(),
-            read: false
+            status: 'sent',
+            sentAt: new Date().toISOString(),
+            senderName: currentUser.displayName || currentUser.email?.split('@')[0] || 'Usuário'
         };
         
-        // 7. Adiciona a mensagem à subcoleção 'messages'
+        // 8. Adiciona a mensagem à subcoleção 'messages'
         const messagesRef = collection(db, 'chats', currentChatId, 'messages');
         const messageRef = await addDoc(messagesRef, messageData);
         
-        console.log('Mensagem enviada com ID:', messageRef.id);
+        // Atualiza o status para 'delivered' quando a mensagem é salva
+        await updateDoc(messageRef, {
+            status: 'delivered',
+            messageId: messageRef.id
+        });
+        
+        // Atualiza o timestamp da última mensagem no chat
+        await updateDoc(doc(db, 'chats', currentChatId), {
+            lastMessage: message,
+            lastMessageAt: serverTimestamp(),
+            lastMessageBy: currentUser.uid,
+            updatedAt: serverTimestamp(),
+            lastMessageStatus: 'delivered'
+        });
         
         // 8. Prepara as atualizações para o documento do chat
         const updates = {
@@ -2000,14 +2150,13 @@ async function sendMessage() {
             await batch.commit();
         }
         
-        // 11. Atualiza o documento principal do chat
+        // 12. Atualiza o documento principal do chat
         await updateDoc(chatRef, updates);
         
-        // 12. Limpa o campo de mensagem e foca nele novamente
-        inputElement.value = '';
+        // 13. Mantém o foco no campo de mensagem
         inputElement.focus();
         
-        // 13. Força a atualização da lista de chats
+        // 14. Força a atualização da lista de chats
         if (typeof loadChats === 'function') {
             loadChats();
         }
@@ -2043,6 +2192,9 @@ async function sendMessage() {
 
 // Carrega as mensagens de uma conversa
 let messageListener = null;
+
+// Rastreia as mensagens que já foram marcadas como lidas
+const readMessages = new Set();
 
 async function loadMessages(chatId) {
     if (!chatId) return;
@@ -2090,80 +2242,111 @@ async function loadMessages(chatId) {
         // Limpa as mensagens atuais
         conversationMessages.innerHTML = '';
         
-        // Configura o listener em tempo real para as mensagens
-        messageListener = onSnapshot(q, async (querySnapshot) => {
-            // Limpa as mensagens apenas na primeira vez
-            if (!conversationMessages.querySelector('.message')) {
-                conversationMessages.innerHTML = '';
-            }
+        // Carrega as mensagens iniciais uma vez
+        const initialSnapshot = await getDocs(q);
+        const initialMessages = [];
+        
+        // Processa as mensagens iniciais
+        initialSnapshot.forEach((doc) => {
+            initialMessages.push({ id: doc.id, ...doc.data() });
+        });
+        
+        // Exibe as mensagens iniciais
+        await displayMessages(initialMessages, participantDetails, conversationMessages);
+        
+        // Configura listener em tempo real para novas mensagens
+        messageListener = onSnapshot(q, async (snapshot) => {
+            const batch = [];
+            const now = new Date();
             
-            // Processa cada mensagem
-            const messagePromises = [];
-            const fragment = document.createDocumentFragment();
-            
-            querySnapshot.docChanges().forEach((change) => {
-                if (change.type === 'added') {
+            // Processa todas as mudanças
+            for (const change of snapshot.docChanges()) {
+                if (change.type === 'added' && !document.getElementById(`message-${change.doc.id}`)) {
                     const message = { id: change.doc.id, ...change.doc.data() };
                     
-                    // Cria um elemento temporário para a mensagem
-                    const tempDiv = document.createElement('div');
-                    tempDiv.style.display = 'none';
-                    
-                    // Adiciona a promessa de criação da mensagem ao array
-                    const messagePromise = (async () => {
+                    // Carrega informações do remetente se necessário
+                    if (message.senderId && !participants[message.senderId]) {
                         try {
-                            const messageElement = await createMessageElement(message, participantDetails);
-                            messageElement.id = `message-${message.id}`;
-                            
-                            // Verifica se a mensagem já existe para evitar duplicação
-                            if (!document.getElementById(`message-${message.id}`)) {
-                                const clone = messageElement.cloneNode(true);
-                                fragment.appendChild(clone);
-                                return { id: message.id, element: clone };
+                            const userRef = doc(db, 'people', message.senderId);
+                            const userDoc = await getDoc(userRef);
+                            if (userDoc.exists()) {
+                                participants[message.senderId] = userDoc.data();
                             }
                         } catch (error) {
-                            console.error('Erro ao criar elemento de mensagem:', error);
+                            console.error('Erro ao carregar dados do remetente:', error);
                         }
-                        return null;
-                    })();
+                    }
+
+                    const messageElement = await createMessageElement(message, participants);
+                    messageElement.id = `message-${message.id}`;
+                    messagesContainer.appendChild(messageElement);
                     
-                    messagePromises.push(messagePromise);
+                    // Marca como lida se for uma mensagem recebida
+                    if (message.senderId !== currentUser.uid && message.status !== 'read' && !readMessages.has(message.id)) {
+                        readMessages.add(message.id);
+                        batch.push(updateDoc(doc(db, 'chats', chatId, 'messages', message.id), {
+                            status: 'read',
+                            readAt: now.toISOString()
+                        }));
+                        
+                        // Atualiza o status da última mensagem no chat
+                        if (snapshot.docs[snapshot.docs.length - 1]?.id === message.id) {
+                            batch.push(updateDoc(doc(db, 'chats', chatId), {
+                                lastMessageStatus: 'read',
+                                updatedAt: serverTimestamp()
+                            }));
+                        }
+                    }
+                    
+                    // Rola para a nova mensagem
+                    messageElement.scrollIntoView({ behavior: 'smooth' });
                 }
-            });
+            }
             
-            // Aguarda todas as mensagens serem processadas
-            const messages = await Promise.all(messagePromises);
-            
-            // Adiciona todas as mensagens ao DOM de uma vez
-            conversationMessages.appendChild(fragment);
-            
-            // Mostra as mensagens
-            messages.forEach(item => {
-                if (item && item.element) {
-                    item.element.style.display = '';
+            // Executa todas as atualizações em lote
+            if (batch.length > 0) {
+                try {
+                    await Promise.all(batch);
+                    // Atualiza a contagem de mensagens não lidas
+                    updateUnreadCount(0);
+                } catch (error) {
+                    console.error('Erro ao atualizar status das mensagens:', error);
                 }
-            });
+            }
+        }, (error) => {
+            console.error(`[loadMessages] Erro no listener de mensagens:`, error);
+        });
+        
+        // Função auxiliar para exibir mensagens
+        async function displayMessages(messages, participants, container) {
+            container.innerHTML = '';
             
-            // Rola para a última mensagem
-            conversationMessages.scrollTop = conversationMessages.scrollHeight;
-            
-            // Se não houver mensagens, mostra a mensagem de "nenhuma mensagem"
-            if (querySnapshot.empty) {
-                conversationMessages.innerHTML = `
+            if (messages.length === 0) {
+                container.innerHTML = `
                     <div class="no-messages">
                         <i class="fas fa-comment-alt"></i>
                         <p>Nenhuma mensagem ainda</p>
                         <p class="hint">Envie uma mensagem para começar a conversa</p>
                     </div>
                 `;
+                return;
             }
             
-            // Marca as mensagens como lidas
-            markAsRead(chatId);
+            const fragment = document.createDocumentFragment();
             
-        }, (error) => {
-            console.error(`[loadMessages] Erro no listener de mensagens:`, error);
-        });
+            for (const message of messages) {
+                try {
+                    const messageElement = await createMessageElement(message, participants);
+                    messageElement.id = `message-${message.id}`;
+                    fragment.appendChild(messageElement);
+                } catch (error) {
+                    console.error('Erro ao criar elemento de mensagem:', error);
+                }
+            }
+            
+            container.appendChild(fragment);
+            container.scrollTop = container.scrollHeight;
+        }
         
     } catch (error) {
         console.error(`[loadMessages] Erro ao carregar mensagens do chat ${chatId}:`, error);
@@ -2181,6 +2364,18 @@ async function loadMessages(chatId) {
 async function createMessageElement(message, participantDetails = {}) {
     const isSent = message.senderId === currentUser.uid;
     const time = message.timestamp ? formatTime(message.timestamp.toDate()) : '';
+    
+    // Mapeamento de status para texto e ícones
+    const statusInfo = {
+        sent: { text: 'Enviada', icon: '✓' },
+        delivered: { text: 'Entregue', icon: '✓✓' },
+        read: { text: 'Lida', icon: '✓✓' },
+        error: { text: 'Erro ao enviar', icon: '!' }
+    };
+    
+    // Obtém o status da mensagem (padrão: 'sent' para mensagens enviadas)
+    const messageStatus = message.status || (isSent ? 'sent' : null);
+    const status = statusInfo[messageStatus] || null;
     
     // Busca os dados do remetente
     let senderName = 'Usuário';
@@ -2222,12 +2417,9 @@ async function createMessageElement(message, participantDetails = {}) {
     const element = document.createElement('div');
     element.className = `message ${isSent ? 'message-sent' : 'message-received'}`;
     
-    // Se for uma mensagem recebida, adiciona o avatar e nome do remetente
+    // Se for uma mensagem recebida, adiciona apenas o nome do remetente
     if (!isSent) {
         element.innerHTML = `
-            <div class="message-avatar" style="background-color: ${avatarColor}">
-                ${photoURL ? `<img src="${photoURL}" alt="${senderName}" class="avatar-image" />` : senderInitials}
-            </div>
             <div class="message-content">
                 <div class="message-sender">${senderName}</div>
                 <div class="message-bubble">
@@ -2237,11 +2429,18 @@ async function createMessageElement(message, participantDetails = {}) {
             </div>
         `;
     } else {
-        // Para mensagens enviadas, mantém o layout original
+        // Para mensagens enviadas, adiciona o status
         element.innerHTML = `
             <div class="message-bubble">
                 ${message.text}
-                <div class="message-time">${time}</div>
+                <div class="message-time">
+                    ${time}
+                    ${status ? `
+                        <span class="message-status" title="${status.text}">
+                            ${status.icon}
+                        </span>
+                    ` : ''}
+                </div>
             </div>
         `;
     }
@@ -2349,6 +2548,38 @@ function updateUnreadCount(count) {
 }
 
 // Funções relacionadas a grupos foram removidas para simplificar o chat
+
+// Adiciona estilos para os status das mensagens
+const style = document.createElement('style');
+style.textContent = `
+    .message-status {
+        display: inline-block;
+        margin-left: 8px;
+        font-size: 0.8em;
+        color: #888;
+        opacity: 0.8;
+    }
+    
+    .message-status[title="Lida"] {
+        color: #4CAF50;
+    }
+    
+    .message-status[title="Entregue"] {
+        color: #2196F3;
+    }
+    
+    .message-status[title="Enviada"] {
+        color: #9E9E9E;
+    }
+    
+    .message-time {
+        display: inline-block;
+        margin-left: 8px;
+        font-size: 0.8em;
+        color: #888;
+    }
+`;
+document.head.appendChild(style);
 
 // Funções auxiliares
 function toggleChatModal() {
