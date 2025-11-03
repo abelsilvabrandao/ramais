@@ -165,43 +165,82 @@ export async function initializeNotifications(db, userId) {
 
     console.log('📡 Configurando listener global de mensagens...');
 
+    // Rastreia o último ID de mensagem notificada para cada chat
+    const lastNotifiedMessage = {};
+
     const unsubscribeChats = onSnapshot(q, async (snapshot) => {
-        snapshot.docChanges().forEach(async (change) => {
-            if (change.type === 'modified') {
-                const chatData = change.doc.data();
-                const chatId = change.doc.id;
-                
-                // Verifica se há mensagens não lidas
-                const unreadCount = chatData.unreadCounts?.[userId] || 0;
-                
-                if (unreadCount > 0 && chatData.lastMessage) {
-                    // Verifica se a última mensagem NÃO foi enviada pelo usuário atual
-                    const lastMessageSenderId = chatData.lastMessageSenderId;
-                    
-                    if (lastMessageSenderId && lastMessageSenderId !== userId) {
-                        // Busca informações do remetente
-                        const senderName = await getSenderName(db, lastMessageSenderId, chatData);
-                        
-                        // Mostra notificação
-                        showBrowserNotification(
-                            `💬 Nova mensagem de ${senderName}`,
-                            {
-                                body: chatData.lastMessage,
-                                tag: `chat-${chatId}`,
-                                onclick: () => {
-                                    // Abre o chat quando clicar na notificação
-                                    if (window.chatModule && window.chatModule.openChatById) {
-                                        window.chatModule.openChatById(chatId);
-                                    }
-                                }
-                            }
-                        );
-                        
-                        console.log(`🔔 Notificação enviada para mensagem de ${senderName}`);
-                    }
-                }
+        const now = Date.now();
+        
+        // Processa cada mudança no chat
+        for (const change of snapshot.docChanges()) {
+            if (change.type !== 'modified') continue;
+            
+            const chatData = change.doc.data();
+            const chatId = change.doc.id;
+            
+            // Verifica se a mensagem já foi notificada recentemente
+            const lastNotified = lastNotifiedMessage[chatId] || 0;
+            const messageTime = chatData.lastMessageAt?.toDate?.()?.getTime() || 0;
+            
+            // Evita notificações duplicadas ou muito rápidas
+            if (now - lastNotified < 5000 || messageTime <= lastNotified) {
+                continue;
             }
-        });
+            
+            // Verifica se a mensagem foi enviada por outro usuário
+            const lastMessageSenderId = chatData.lastMessageSenderId;
+            if (!lastMessageSenderId || lastMessageSenderId === userId) {
+                continue;
+            }
+            
+            // Verifica se há mensagens não lidas
+            const unreadCount = chatData.unreadCounts?.[userId] || 0;
+            if (unreadCount <= 0 || !chatData.lastMessage) {
+                continue;
+            }
+            
+            try {
+                // Busca informações do remetente
+                const senderName = await getSenderName(db, lastMessageSenderId, chatData);
+                
+                // Mostra notificação apenas se o chat não estiver visível
+                const isChatVisible = document.querySelector(`[data-chat-id="${chatId}"][data-active="true"]`);
+                
+                if (!isChatVisible) {
+                    showBrowserNotification(
+                        `💬 Nova mensagem de ${senderName}`,
+                        {
+                            body: chatData.lastMessage.length > 50 
+                                ? chatData.lastMessage.substring(0, 50) + '...' 
+                                : chatData.lastMessage,
+                            tag: `chat-${chatId}`,
+                            icon: '/icons/icon-192x192.png',
+                            badge: '/icons/icon-96x96.png',
+                            requireInteraction: false,
+                            data: {
+                                chatId: chatId,
+                                timestamp: messageTime
+                            },
+                            onclick: () => {
+                                // Abre o chat quando clicar na notificação
+                                if (window.chatModule?.openChatById) {
+                                    window.chatModule.openChatById(chatId);
+                                }
+                                // Fecha a notificação
+                                window.focus();
+                            }
+                        }
+                    );
+                    
+                    console.log(`🔔 Notificação enviada para mensagem de ${senderName}`);
+                    lastNotifiedMessage[chatId] = now;
+                } else {
+                    console.log(`💬 Mensagem em chat visível, notificação suprimida`);
+                }
+            } catch (error) {
+                console.error('Erro ao processar notificação:', error);
+            }
+        }
     }, (error) => {
         console.error('❌ Erro no listener de notificações:', error);
     });
